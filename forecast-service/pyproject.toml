@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "energy-monitor-forecast-service"
+version = "0.1.0"
+description = "Forecast microservice for the energy monitor demo"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.30,<1.0",
+  "pydantic>=2.8,<3.0",
+  "pydantic-settings>=2.3,<3.0",
+  "numpy>=2.1,<3.0",
+  "pandas>=2.2,<3.0",
+  "prophet>=1.1.6,<2.0",
+  "pytest>=8.3,<9.0",
+  "statsmodels>=0.14.4,<1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

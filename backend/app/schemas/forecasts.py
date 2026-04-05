@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from app.schemas.shared import TimeSeriesPoint
+
+ForecastModelType = Literal["arima", "prophet"]
+ForecastSignalType = Literal["production", "price"]
+ForecastTargetKind = Literal["price", "volume", "both"]
+
+
+class ForecastRunListFilters(BaseModel):
+    scope: str | None = None
+    status: str | None = None
+    signal_type: ForecastSignalType | None = None
+    granularity: Literal["15m", "1h"] | None = None
+    limit: int = 20
+
+
+class ForecastRunSummary(BaseModel):
+    id: int
+    scope: str
+    target_code: str | None
+    granularity: str
+    horizon: str
+    signal_type: ForecastSignalType
+    model_name: str
+    fallback_used: bool
+    status: str
+    started_at: datetime
+    completed_at: datetime | None
+    point_count: int
+
+
+class ForecastRunsResponse(BaseModel):
+    items: list[ForecastRunSummary]
+
+
+class ForecastRunDetailResponse(BaseModel):
+    id: int
+    scope: str
+    target_code: str | None
+    granularity: str
+    horizon: str
+    signal_type: ForecastSignalType
+    model_name: str
+    fallback_used: bool
+    status: str
+    started_at: datetime
+    completed_at: datetime | None
+    metadata_json: dict | None
+    values: list[TimeSeriesPoint]
+
+
+class ForecastExecutionRequest(BaseModel):
+    model_type: ForecastModelType
+    target_kind: ForecastTargetKind
+    horizon: Literal["next_24h", "day_ahead"] = "next_24h"
+    granularity: Literal["15m", "1h"] = "1h"
+    market_session: str = "MGP"
+    history_points: int | None = Field(default=None, ge=1)
+
+
+class ForecastExecutionResponse(BaseModel):
+    requested_targets: list[ForecastSignalType]
+    granularity: Literal["15m", "1h"]
+    horizon: Literal["next_24h", "day_ahead"]
+    model_type: ForecastModelType
+    runs: list[ForecastRunDetailResponse]

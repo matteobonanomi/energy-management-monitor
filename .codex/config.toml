@@ -1,0 +1,52 @@
+# Project-scoped Codex configuration.
+# The defaults below are meant to be reusable across local multi-service repos,
+# while still fitting this energy monitoring demo.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+project_doc_max_bytes = 65536
+project_doc_fallback_filenames = ["AGENTS.md", "README.md"]
+project_root_markers = [".git", "AGENTS.md", "docker-compose.yml", "compose.yml", "pyproject.toml", "package.json"]
+allow_login_shell = true
+
+[sandbox_workspace_write]
+network_access = false
+writable_roots = ["./"]
+
+[shell_environment_policy]
+inherit = "core"
+exclude = ["*TOKEN*", "*SECRET*", "*KEY*", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+set = { APP_ENV = "local", LOG_LEVEL = "INFO" }
+
+[features]
+codex_hooks = true
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[profiles.readonly_review]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+
+[profiles.implementation]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.implementation.sandbox_workspace_write]
+network_access = false
+
+[profiles.demo_run]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.demo_run.sandbox_workspace_write]
+network_access = false
+
+[profiles.research]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.research.sandbox_workspace_write]
+network_access = true

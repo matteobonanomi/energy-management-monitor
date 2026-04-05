@@ -1,0 +1,55 @@
+# Additional guardrails for shell usage.
+
+prefix_rule(
+    pattern = ["sudo"],
+    decision = "forbidden",
+    justification = "Do not use sudo from Codex sessions."
+)
+
+prefix_rule(
+    pattern = ["systemctl"],
+    decision = "forbidden",
+    justification = "Host service management should stay manual."
+)
+
+prefix_rule(
+    pattern = ["kubectl"],
+    decision = "forbidden",
+    justification = "Cluster operations are outside the normal local workflow."
+)
+
+prefix_rule(
+    pattern = ["terraform", "apply"],
+    decision = "forbidden",
+    justification = "Infrastructure apply is outside scope for repository coding sessions."
+)
+
+prefix_rule(
+    pattern = ["helm", "upgrade"],
+    decision = "forbidden",
+    justification = "Deployment operations are outside the normal local workflow."
+)
+
+prefix_rule(
+    pattern = ["rm", "-rf", "/"],
+    decision = "forbidden",
+    justification = "Dangerous destructive command."
+)
+
+prefix_rule(
+    pattern = ["dd"],
+    decision = "prompt",
+    justification = "Low-level disk operations require explicit review."
+)
+
+prefix_rule(
+    pattern = ["curl"],
+    decision = "prompt",
+    justification = "Direct network fetches should be intentional."
+)
+
+prefix_rule(
+    pattern = ["wget"],
+    decision = "prompt",
+    justification = "Direct network fetches should be intentional."
+)

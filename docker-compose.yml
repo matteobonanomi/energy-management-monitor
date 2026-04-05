@@ -1,0 +1,109 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-energy_monitor}
+      POSTGRES_USER: ${POSTGRES_USER:-energy_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-energy_pass}
+      TZ: ${TZ:-Europe/Rome}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U energy_user -d energy_monitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7.0
+    environment:
+      TZ: ${TZ:-Europe/Rome}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./.mongodata:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "db.runCommand({ ping: 1 })"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command:
+      - /bin/sh
+      - -lc
+      - alembic upgrade head && python scripts/ensure_demo_data.py && uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TZ: ${TZ:-Europe/Rome}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://energy_user:energy_pass@postgres:5432/energy_monitor}
+      FORECAST_SERVICE_URL: ${FORECAST_SERVICE_URL:-http://forecast-service:8001}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      MONGO_ENABLED: ${MONGO_ENABLED:-true}
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017}
+      MONGO_DATABASE: ${MONGO_DATABASE:-energy_monitor}
+      MONGO_ACTION_COLLECTION: ${MONGO_ACTION_COLLECTION:-user_action_events}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8000/health")
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  forecast-service:
+    build:
+      context: ./forecast-service
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TZ: ${TZ:-Europe/Rome}
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8001/health")
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_FORECAST_API_BASE_URL: ${VITE_FORECAST_API_BASE_URL:-http://localhost:8001}
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+      forecast-service:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy

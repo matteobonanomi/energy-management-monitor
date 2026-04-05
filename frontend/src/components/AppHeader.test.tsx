@@ -30,4 +30,27 @@ describe("AppHeader", () => {
     expect(onThemeChange).toHaveBeenCalledWith("light");
     expect(onGranularityChange).toHaveBeenCalledWith("1h");
   }, 20_000);
+
+  it("shows contextual help for header controls", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <AppHeader
+        role="portfolioManager"
+        theme="dark"
+        granularity="1h"
+        isPending={false}
+        onRoleChange={vi.fn()}
+        onThemeChange={vi.fn()}
+        onGranularityChange={vi.fn()}
+      />,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "Aiuto Profilo" }));
+
+    expect(
+      screen.getByText(/scegli il punto di vista della dashboard/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/what's new/i)).toBeInTheDocument();
+  }, 20_000);
 });

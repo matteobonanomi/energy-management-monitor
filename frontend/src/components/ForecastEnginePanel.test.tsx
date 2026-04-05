@@ -31,4 +31,29 @@ describe("ForecastEnginePanel", () => {
     expect(onChange).toHaveBeenCalled();
     expect(onSubmit).toHaveBeenCalledTimes(1);
   }, 20_000);
+
+  it("shows short help text for forecast parameters", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ForecastEnginePanel
+        value={{
+          modelType: "arima",
+          targetKind: "both",
+          horizon: "next_24h",
+        }}
+        response={null}
+        isSubmitting={false}
+        error={null}
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "Aiuto Model" }));
+
+    expect(
+      screen.getByText(/ARIMA è rapido e lineare/i),
+    ).toBeInTheDocument();
+  }, 20_000);
 });

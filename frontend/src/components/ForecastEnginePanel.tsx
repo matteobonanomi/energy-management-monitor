@@ -3,6 +3,7 @@ import type {
   ForecastFormState,
 } from "../types/api";
 import { formatDateTime } from "../lib/format";
+import { HelpTooltip } from "./HelpTooltip";
 
 interface ForecastEnginePanelProps {
   value: ForecastFormState;
@@ -25,7 +26,13 @@ export function ForecastEnginePanel({
     <div className="forecast-engine">
       <div className="forecast-engine-form">
         <label className="field">
-          <span className="filter-label">Model</span>
+          <span className="field-heading">
+            <span className="filter-label">Model</span>
+            <HelpTooltip
+              label="Aiuto Model"
+              text="Scegli il motore previsionale. ARIMA è rapido e lineare, Prophet gestisce meglio trend e stagionalità."
+            />
+          </span>
           <select
             aria-label="Model"
             value={value.modelType}
@@ -42,7 +49,13 @@ export function ForecastEnginePanel({
         </label>
 
         <label className="field">
-          <span className="filter-label">Orizzonte</span>
+          <span className="field-heading">
+            <span className="filter-label">Orizzonte</span>
+            <HelpTooltip
+              label="Aiuto Orizzonte"
+              text="Definisce quanto avanti si estende la previsione. Intraday copre 24h, day-ahead copre 48h."
+            />
+          </span>
           <select
             aria-label="Orizzonte"
             value={value.horizon}
@@ -59,7 +72,13 @@ export function ForecastEnginePanel({
         </label>
 
         <label className="field">
-          <span className="filter-label">Cosa prevedere</span>
+          <span className="field-heading">
+            <span className="filter-label">Cosa prevedere</span>
+            <HelpTooltip
+              label="Aiuto Cosa prevedere"
+              text="Scegli se proiettare prezzi, volumi o entrambi. Il risultato compare subito nei due grafici in alto."
+            />
+          </span>
           <select
             aria-label="Cosa prevedere"
             value={value.targetKind}
@@ -93,7 +112,15 @@ export function ForecastEnginePanel({
           </div>
         ) : response ? (
           <div className="forecast-status-card">
-            <p className="forecast-status-title">Ultimo run completato</p>
+            <p className="forecast-status-title">Forecast guide</p>
+            <p className="forecast-status-copy">
+              Configura il motore a sinistra e premi RUN. Il forecast viene
+              calcolato sul portfolio aggregato e disegnato con linea
+              tratteggiata sopra lo storico.
+            </p>
+            <p className="forecast-status-title forecast-status-title-secondary">
+              Ultimo run completato
+            </p>
             <p>
               {response.model_type.toUpperCase()} · {response.granularity} ·{" "}
               {response.horizon === "next_24h" ? "intraday" : "day-ahead"}
@@ -111,8 +138,8 @@ export function ForecastEnginePanel({
           </div>
         ) : (
           <div className="forecast-status-card">
-            <p className="forecast-status-title">Forecast Engine</p>
-            <p>
+            <p className="forecast-status-title">Forecast guide</p>
+            <p className="forecast-status-copy">
               Seleziona modello, orizzonte e target. Il forecast completato viene
               mostrato subito nei due grafici superiori con linea tratteggiata.
             </p>

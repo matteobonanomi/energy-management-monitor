@@ -26,8 +26,18 @@ class MetadataRepository:
             select(func.min(ProductionMeasurement.measured_at), func.max(ProductionMeasurement.measured_at))
         ).one()
 
+        technology_labels = {
+            "pv": "PV",
+            "wind": "WIND",
+            "hydro": "IDRO",
+            "gas": "GAS",
+        }
+
         return FiltersResponse(
-            technologies=[TechnologyOption(code=item, label=item.upper()) for item in technologies],
+            technologies=[
+                TechnologyOption(code=item, label=technology_labels.get(item, item.upper()))
+                for item in technologies
+            ],
             market_zones=zones,
             market_sessions=list(MARKET_SESSIONS),
             granularities=list(FORECAST_GRANULARITIES),

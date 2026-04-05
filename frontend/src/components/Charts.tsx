@@ -100,6 +100,13 @@ function tooltipFormatter(value: number | string | Array<string | number> | null
   return value ?? "--";
 }
 
+const technologyPalette: Record<string, string> = {
+  pv: "#fbbf24",
+  wind: "#38bdf8",
+  hydro: "#14b8a6",
+  gas: "#f97316",
+};
+
 export function ProductionChart({
   data,
   seriesKeys,
@@ -204,6 +211,86 @@ export function MonitorLineChart({
       forecastSeriesKeys={forecastSeriesKeys}
       labelMap={labelMap}
     />
+  );
+}
+
+export function MonitorStackedAreaChart({
+  data,
+  areaSeriesKeys,
+  forecastSeriesKey = "forecast",
+  labelMap = {},
+}: {
+  data: ChartDatum[];
+  areaSeriesKeys: string[];
+  forecastSeriesKey?: string;
+  labelMap?: Record<string, string>;
+}) {
+  return (
+    <div className="chart-shell">
+      <ResponsiveContainer width="100%" height={320}>
+        <ComposedChart data={data}>
+          <defs>
+            {areaSeriesKeys.map((seriesKey) => (
+              <linearGradient
+                key={seriesKey}
+                id={`monitor-gradient-${seriesKey}`}
+                x1="0"
+                x2="0"
+                y1="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor={technologyPalette[seriesKey] ?? "#7dd3fc"}
+                  stopOpacity={0.45}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={technologyPalette[seriesKey] ?? "#7dd3fc"}
+                  stopOpacity={0.06}
+                />
+              </linearGradient>
+            ))}
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
+          <XAxis dataKey="label" minTickGap={32} stroke="var(--muted-color)" />
+          <YAxis stroke="var(--muted-color)" />
+          <Tooltip
+            contentStyle={{
+              background: "var(--surface-raised)",
+              border: "1px solid var(--border-color)",
+              borderRadius: 16,
+            }}
+            formatter={tooltipFormatter}
+          />
+          <Legend />
+          {areaSeriesKeys.map((seriesKey) => (
+            <Area
+              key={seriesKey}
+              type="monotone"
+              dataKey={seriesKey}
+              name={labelMap[seriesKey] ?? seriesKey.toUpperCase()}
+              stackId="production"
+              stroke={technologyPalette[seriesKey] ?? "#7dd3fc"}
+              fill={`url(#monitor-gradient-${seriesKey})`}
+              strokeWidth={1.8}
+              dot={false}
+            />
+          ))}
+          {data.some((row) => row[forecastSeriesKey] !== null && row[forecastSeriesKey] !== undefined) ? (
+            <Line
+              type="monotone"
+              dataKey={forecastSeriesKey}
+              name={labelMap[forecastSeriesKey] ?? "Forecast"}
+              stroke="#0f766e"
+              strokeDasharray="7 4"
+              strokeWidth={2.6}
+              dot={false}
+            />
+          ) : null}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 

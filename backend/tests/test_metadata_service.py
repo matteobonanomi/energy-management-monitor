@@ -31,7 +31,8 @@ def test_metadata_service_returns_expected_filters() -> None:
 
     assert len(response.plants) == 75
     assert [technology.code for technology in response.technologies] == ["gas", "hydro", "pv", "wind"]
-    assert response.market_zones == ["ZONA_1", "ZONA_2", "ZONA_3", "ZONA_4", "ZONA_5"]
+    assert [technology.label for technology in response.technologies] == ["GAS", "IDRO", "PV", "WIND"]
+    assert response.market_zones == ["EST", "NORD", "OVEST", "SUD"]
     assert response.market_sessions == ["MGP", "MI1", "MI2", "MI3"]
     assert response.granularities == ["15m", "1h"]
     assert response.date_range.min_timestamp is not None

@@ -1,3 +1,4 @@
+import { HelpTooltip } from "./HelpTooltip";
 import type { Granularity, ThemeMode, UserRole } from "../types/api";
 
 type Option<T extends string> = {
@@ -7,20 +8,27 @@ type Option<T extends string> = {
 
 interface SegmentedControlProps<T extends string> {
   label: string;
+  helpText: string;
   options: Option<T>[];
   selectedValue: T;
   onChange: (value: T) => void;
+  isWide?: boolean;
 }
 
 function SegmentedControl<T extends string>({
   label,
+  helpText,
   options,
   selectedValue,
   onChange,
+  isWide = false,
 }: SegmentedControlProps<T>) {
   return (
-    <div className="segment-card">
-      <span className="segment-label">{label}</span>
+    <div className={isWide ? "segment-card segment-card-wide" : "segment-card"}>
+      <div className="segment-heading">
+        <span className="segment-label">{label}</span>
+        <HelpTooltip label={`Aiuto ${label}`} text={helpText} />
+      </div>
       <div className="segment-control" role="group" aria-label={label}>
         {options.map((option) => (
           <button
@@ -81,32 +89,31 @@ export function AppHeader({
         <p className="eyebrow">BETA VERSION 0.1</p>
         <h1>EnergyMonitor</h1>
         <p className="lead">
-          Monitor operativo dei prezzi e della produzione portfolio con temi
-          Material Design, granularita reale e layout essenziale 2x2.
+          <strong>What&apos;s new:</strong> testa i nuovi modelli previsionali di
+          prezzo e volumi.
         </p>
-        <div className="hero-meta">
-          <span className="meta-pill">Portfolio Manager default</span>
-          <span className="meta-pill">Analyst view allineata al beta</span>
-          <span className="meta-pill">Serie 15m / 1h attive</span>
-          {isPending ? <span className="meta-pill meta-pill-pending">Aggiornamento dati…</span> : null}
-        </div>
+        {isPending ? <p className="hero-status">Aggiornamento dati in corso…</p> : null}
       </div>
 
       <div className="hero-controls">
         <SegmentedControl
-          label="Persona"
+          label="Profilo"
+          helpText="Scegli il punto di vista della dashboard. Per ora Data Analyst usa la stessa vista del Portfolio Manager."
+          isWide
           options={roleOptions}
           selectedValue={role}
           onChange={onRoleChange}
         />
         <SegmentedControl
           label="Theme"
+          helpText="Cambia il contrasto visivo dell'app. Il tema Light usa una palette chiara con accenti blu."
           options={themeOptions}
           selectedValue={theme}
           onChange={onThemeChange}
         />
         <SegmentedControl
           label="Granularity"
+          helpText="Decide il livello di dettaglio delle serie. 15m mostra più dettaglio, 1h una vista più sintetica."
           options={granularityOptions}
           selectedValue={granularity}
           onChange={onGranularityChange}

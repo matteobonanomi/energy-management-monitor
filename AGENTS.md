@@ -40,7 +40,7 @@ La web app deve mostrare:
 Usa questi default salvo override esplicito dell'utente:
 
 - tecnologie: `pv`, `wind`, `hydro`, `gas`
-- zone demo: `ZONA_1`, `ZONA_2`, `ZONA_3`, `ZONA_4`, `ZONA_5`
+- zone demo: `NORD`, `SUD`, `EST`, `OVEST`
 - sessioni mercato demo: `MGP`, `MI1`, `MI2`, `MI3`
 - granularità sorgente: `15m`
 - granularità UI: `15m` e `1h`

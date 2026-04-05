@@ -18,9 +18,21 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 ROME_TZ = ZoneInfo("Europe/Rome")
-MARKET_ZONES = ("ZONA_1", "ZONA_2", "ZONA_3", "ZONA_4", "ZONA_5")
+MARKET_ZONES = ("NORD", "SUD", "EST", "OVEST")
 MARKET_SESSIONS = ("MGP", "MI1", "MI2", "MI3")
 TECHNOLOGY_COUNTS = {"pv": 50, "wind": 10, "hydro": 5, "gas": 10}
+CITY_NAMES = (
+    "Torino", "Milano", "Brescia", "Verona", "Padova", "Venezia", "Trieste", "Udine",
+    "Bologna", "Parma", "Modena", "Ravenna", "Firenze", "Pisa", "Livorno", "Perugia",
+    "Ancona", "Roma", "Latina", "Pescara", "Napoli", "Caserta", "Salerno", "Bari",
+    "Taranto", "Lecce", "Potenza", "Cosenza", "Reggio Calabria", "Palermo", "Catania",
+    "Messina", "Siracusa", "Cagliari", "Sassari", "Olbia", "Aosta", "Trento", "Bolzano",
+    "Mantova", "Ferrara", "Forli", "Rimini", "Arezzo", "Siena", "Lucca", "Viterbo",
+    "Frosinone", "Campobasso", "Isernia", "Foggia", "Brindisi", "Matera", "Catanzaro",
+    "Trapani", "Agrigento", "Ragusa", "Nuoro", "Oristano", "Alessandria", "Novara",
+    "Como", "Lecco", "Bergamo", "Vicenza", "Treviso", "Belluno", "Gorizia", "Pordenone",
+    "Reggio Emilia", "Piacenza", "Prato", "Terni", "Ascoli", "Avellino", "Benevento",
+)
 
 
 @dataclass(slots=True)
@@ -57,10 +69,14 @@ class MarketPriceRecord:
 class PlantState:
     profile_scale: float
     wind_state: float
-    gas_state: float
     cloud_factor: float
     outage_remaining: int
     outage_scale: float
+    gas_limit_remaining: int
+    gas_limit_scale: float
+    hydro_state: float
+    hydro_regime_remaining: int
+    hydro_regime_target: float
 
 
 @dataclass(slots=True)
@@ -93,16 +109,22 @@ def _round(value: float, digits: int = 4) -> float:
 def generate_plants(seed: int) -> list[PlantRecord]:
     rng = random.Random(seed)
     plants: list[PlantRecord] = []
+    city_pool = list(CITY_NAMES)
+    rng.shuffle(city_pool)
+    city_index = 0
 
     def add_plants(technology: str, prefix: str, count: int, capacity_range: tuple[float, float]) -> None:
+        nonlocal city_index
         for index in range(1, count + 1):
             commissioned_year = rng.randint(2004, 2023)
             commissioned_month = rng.randint(1, 12)
             commissioned_day = rng.randint(1, 28)
+            city_name = city_pool[city_index % len(city_pool)]
+            city_index += 1
             plants.append(
                 PlantRecord(
                     code=f"{prefix}_{index:03d}",
-                    name=f"Impianto {technology.upper()} {index:03d}",
+                    name=f"{city_name} {technology.upper()} {index:03d}",
                     technology=technology,
                     market_zone=MARKET_ZONES[(index - 1) % len(MARKET_ZONES)],
                     capacity_mw=_round(rng.uniform(*capacity_range), 3),
@@ -131,10 +153,14 @@ def _initial_states(plants: list[PlantRecord], seed: int) -> dict[str, PlantStat
         plant.code: PlantState(
             profile_scale=rng.uniform(0.9, 1.08),
             wind_state=rng.uniform(-0.15, 0.15),
-            gas_state=rng.uniform(0.15, 0.55),
             cloud_factor=rng.uniform(0.65, 0.95),
             outage_remaining=0,
             outage_scale=1.0,
+            gas_limit_remaining=0,
+            gas_limit_scale=1.0,
+            hydro_state=rng.uniform(0.35, 0.72),
+            hydro_regime_remaining=0,
+            hydro_regime_target=rng.uniform(0.2, 0.8),
         )
         for plant in plants
     }
@@ -201,15 +227,32 @@ def generate_production_measurements(
                 base_ratio = 0.42 + 0.24 * state.wind_state + 0.08 * math.sin(day_of_year / 8.0)
                 base_ratio *= state.profile_scale
             elif plant.technology == "hydro":
-                intraday = 0.06 * math.sin((2 * math.pi * hour_value) / 24.0)
-                base_ratio = 0.56 + intraday + 0.06 * seasonal_factor + rng.normalvariate(0, 0.015)
-                base_ratio *= state.profile_scale
+                if state.hydro_regime_remaining == 0:
+                    state.hydro_regime_remaining = rng.randint(96, 96 * 7)
+                    regime_draw = rng.random()
+                    if regime_draw < 0.18:
+                        state.hydro_regime_target = rng.uniform(0.0, 0.08)
+                    elif regime_draw < 0.42:
+                        state.hydro_regime_target = rng.uniform(0.12, 0.28)
+                    else:
+                        state.hydro_regime_target = rng.uniform(0.42, 0.92)
+                state.hydro_regime_remaining -= 1
+                state.hydro_state = 0.985 * state.hydro_state + 0.015 * state.hydro_regime_target
+                base_ratio = state.hydro_state + rng.normalvariate(0, 0.01)
+                base_ratio *= (0.96 + 0.08 * seasonal_factor) * state.profile_scale
             else:
+                if state.gas_limit_remaining == 0 and rng.random() < 0.002:
+                    state.gas_limit_remaining = rng.choice((32, 64))
+                    state.gas_limit_scale = rng.uniform(0.28, 0.62)
+                if state.gas_limit_remaining > 0:
+                    gas_limit_scale = state.gas_limit_scale
+                    state.gas_limit_remaining -= 1
+                else:
+                    gas_limit_scale = 1.0
                 demand = _demand_proxy(hour_value, is_weekend)
-                state.gas_state = 0.82 * state.gas_state + 0.18 * demand + rng.normalvariate(0, 0.04)
-                base_ratio = 0.18 + 0.72 * state.gas_state
+                base_ratio = (0.74 + 0.12 * demand + rng.normalvariate(0, 0.012)) * gas_limit_scale
                 if is_weekend:
-                    base_ratio *= 0.9
+                    base_ratio *= 0.96
                 base_ratio *= state.profile_scale
 
             bounded_ratio = min(1.0, max(0.0, base_ratio + noise))
@@ -233,11 +276,10 @@ def generate_production_measurements(
 def generate_market_prices(timestamps: list[datetime], seed: int) -> list[MarketPriceRecord]:
     rng = random.Random(seed + 303)
     zone_bases = {
-        "ZONA_1": 84.0,
-        "ZONA_2": 81.5,
-        "ZONA_3": 79.0,
-        "ZONA_4": 77.5,
-        "ZONA_5": 76.0,
+        "NORD": 86.0,
+        "SUD": 78.0,
+        "EST": 81.5,
+        "OVEST": 83.5,
     }
     session_premiums = {"MGP": 0.0, "MI1": 3.5, "MI2": 6.0, "MI3": 8.5}
     session_volatility = {"MGP": 1.8, "MI1": 2.5, "MI2": 3.2, "MI3": 4.2}

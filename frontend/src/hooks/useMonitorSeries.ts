@@ -5,6 +5,7 @@ import { isoToLocalInputValue } from "../lib/dates";
 import type {
   DashboardFiltersState,
   Granularity,
+  SeriesBreakdown,
   TimeSeriesResponse,
 } from "../types/api";
 
@@ -12,6 +13,7 @@ interface UseMonitorSeriesOptions {
   kind: "price" | "production";
   granularity: Granularity;
   range: { startIso: string; endIso: string } | null;
+  breakdownBy?: SeriesBreakdown;
 }
 
 function buildFilters(
@@ -33,6 +35,7 @@ export function useMonitorSeries({
   kind,
   granularity,
   range,
+  breakdownBy = "none",
 }: UseMonitorSeriesOptions) {
   const [data, setData] = useState<TimeSeriesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +56,11 @@ export function useMonitorSeries({
 
     const request =
       kind === "price"
-        ? energyApi.getPriceSeries(filters, granularity, "none", controller.signal)
+        ? energyApi.getPriceSeries(filters, granularity, breakdownBy, controller.signal)
         : energyApi.getProductionSeries(
             filters,
             granularity,
-            "none",
+            breakdownBy,
             controller.signal,
           );
 
@@ -84,7 +87,7 @@ export function useMonitorSeries({
     return () => {
       controller.abort();
     };
-  }, [granularity, kind, range?.endIso, range?.startIso, version]);
+  }, [breakdownBy, granularity, kind, range?.endIso, range?.startIso, version]);
 
   return { data, error, loading, refresh };
 }

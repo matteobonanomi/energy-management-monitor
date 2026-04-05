@@ -113,6 +113,37 @@ export function buildMonitorForecastChartData(
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+export function buildStackedMonitorChartData(
+  actualSeries: NamedSeries[],
+  forecastPoints: ForecastPoint[],
+): ChartDatum[] {
+  const rows = new Map<string, ChartDatum>();
+
+  for (const series of actualSeries) {
+    for (const point of series.points) {
+      const existing = rows.get(point.timestamp) ?? {
+        timestamp: point.timestamp,
+        label: formatChartLabel(point.timestamp),
+        forecast: null,
+      };
+      existing[series.key] = point.value;
+      rows.set(point.timestamp, existing);
+    }
+  }
+
+  for (const point of forecastPoints) {
+    const existing = rows.get(point.timestamp) ?? {
+      timestamp: point.timestamp,
+      label: formatChartLabel(point.timestamp),
+      forecast: null,
+    };
+    existing.forecast = point.value;
+    rows.set(point.timestamp, existing);
+  }
+
+  return [...rows.values()].sort(sortByTimestamp);
+}
+
 function sortByTimestamp(left: ChartDatum, right: ChartDatum): number {
   return new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime();
 }

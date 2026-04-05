@@ -1,7 +1,7 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { AppHeader } from "../components/AppHeader";
-import { MonitorLineChart } from "../components/Charts";
+import { MonitorLineChart, MonitorStackedAreaChart } from "../components/Charts";
 import { ForecastEnginePanel } from "../components/ForecastEnginePanel";
 import { MonitorPanel } from "../components/MonitorPanel";
 import { PortfolioKpiGrid } from "../components/PortfolioKpiGrid";
@@ -10,7 +10,7 @@ import { useForecastExecution } from "../hooks/useForecastExecution";
 import { useFiltersData } from "../hooks/useFiltersData";
 import { useMonitorSeries } from "../hooks/useMonitorSeries";
 import { usePortfolioSummary } from "../hooks/usePortfolioSummary";
-import { buildMonitorForecastChartData } from "../lib/charts";
+import { buildMonitorForecastChartData, buildStackedMonitorChartData } from "../lib/charts";
 import { buildRangeIsoBounds } from "../lib/dates";
 import { trackUserAction } from "../lib/userActionTracking";
 import type {
@@ -83,14 +83,22 @@ export function App() {
     kind: "production",
     granularity,
     range: energyRange,
+    breakdownBy: "technology",
   });
 
   const priceActualPoints = priceMonitor.data?.series[0]?.points ?? [];
-  const energyActualPoints = energyMonitor.data?.series[0]?.points ?? [];
+  const energyActualSeries = energyMonitor.data?.series ?? [];
   const priceForecastPoints = forecastExecution.runsBySignal.price?.values ?? [];
   const energyForecastPoints = forecastExecution.runsBySignal.production?.values ?? [];
   const priceChartData = buildMonitorForecastChartData(priceActualPoints, priceForecastPoints);
-  const energyChartData = buildMonitorForecastChartData(energyActualPoints, energyForecastPoints);
+  const energyChartData = buildStackedMonitorChartData(energyActualSeries, energyForecastPoints);
+  const energySeriesKeys = useMemo(
+    () => {
+      const available = new Set(energyActualSeries.map((series) => series.key));
+      return ["pv", "wind", "hydro", "gas"].filter((seriesKey) => available.has(seriesKey));
+    },
+    [energyActualSeries],
+  );
 
   const apiBootstrapError = filtersResource.error;
 
@@ -210,7 +218,7 @@ export function App() {
 
         <MonitorPanel
           title="Energy monitor"
-          subtitle="Energia prodotta complessivamente dal portfolio nella finestra temporale selezionata."
+          subtitle="Produzione portfolio in area cumulata per tecnologia, con overlay forecast sul totale nella finestra selezionata."
           window={energyWindow}
           onWindowChange={(nextWindow) => {
             setEnergyWindow(nextWindow);
@@ -243,11 +251,16 @@ export function App() {
           ) : energyMonitor.error ? (
             renderMonitorState(energyMonitor.error, "error")
           ) : (
-            <MonitorLineChart
+            <MonitorStackedAreaChart
               data={energyChartData}
-              seriesKeys={energyForecastPoints.length > 0 ? ["actual", "forecast"] : ["actual"]}
-              forecastSeriesKeys={["forecast"]}
-              labelMap={{ actual: "Actual", forecast: "Forecast" }}
+              areaSeriesKeys={energySeriesKeys}
+              labelMap={{
+                pv: "PV",
+                wind: "WIND",
+                hydro: "IDRO",
+                gas: "GAS",
+                forecast: "Forecast",
+              }}
             />
           )}
         </MonitorPanel>

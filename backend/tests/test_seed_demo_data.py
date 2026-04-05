@@ -10,7 +10,7 @@ def test_build_dataset_respects_required_counts() -> None:
 
     assert len(dataset.plants) == 75
     assert len(dataset.production_measurements) == 75 * 2 * 96
-    assert len(dataset.market_prices) == 5 * 4 * 2 * 96
+    assert len(dataset.market_prices) == 4 * 4 * 2 * 96
 
     errors = validate_dataset(dataset, expected_days=2)
     assert errors == []

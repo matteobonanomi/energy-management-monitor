@@ -9,7 +9,7 @@ from app.db.base import Base
 
 
 TECHNOLOGIES = ("pv", "wind", "hydro", "gas")
-MARKET_ZONES = ("ZONA_1", "ZONA_2", "ZONA_3", "ZONA_4", "ZONA_5")
+MARKET_ZONES = ("NORD", "SUD", "EST", "OVEST")
 MARKET_SESSIONS = ("MGP", "MI1", "MI2", "MI3")
 FORECAST_SCOPES = ("plant", "portfolio", "technology", "zone")
 FORECAST_GRANULARITIES = ("15m", "1h")

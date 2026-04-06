@@ -1,97 +1,108 @@
 # EnergyMonitor
 
-Demo locale per il monitoraggio di prezzi di mercato e produzione portfolio, con forecast on-demand, logging strutturato ed event tracking utente persistito su MongoDB.
+EnergyMonitor is a local demo for monitoring synthetic energy-market prices and plant production, with on-demand forecasting, structured logging, and user-event tracking persisted in MongoDB.
 
-## Stato attuale
+## Current product shape
 
-L'app espone una singola vista React in griglia `2x2`:
+The application runs as a React dashboard with two user profiles:
 
-- alto sinistra: `Price monitor`
-- alto destra: `Energy monitor`
-- basso sinistra: KPI portfolio `3x2`
-- basso destra: `Forecast Engine`
+- `Portfolio Manager`
+- `Data Analyst`
 
-L'header globale include:
+The global header includes:
 
-- `Portfolio Manager / Data Analyst`
-- `Dark / Light`
-- `15m / 1h`
+- `Profile`
+- `Theme`
+- `Granularity`
 
-La vista `Data Analyst` oggi condivide volutamente la stessa composizione del `Portfolio Manager`. I forecast vengono lanciati dalla UI, eseguiti nel microservizio dedicato e mostrati nei due monitor superiori con linea tratteggiata rispetto al dato actual.
+The `Portfolio Manager` view uses a `2x2` grid:
 
-## Architettura
+- top-left: `Price monitor`
+- top-right: `Energy monitor`
+- bottom-left: `Portfolio KPIs`
+- bottom-right: `Forecast Engine`
+
+The `Data Analyst` view uses:
+
+- a merged top panel called `Price-Plant chart`
+- a configurable `6-slot` KPI area in the lower-left panel
+- the same `Forecast Engine` in the lower-right panel, with extra model options and advanced settings
+
+Forecast outputs are drawn directly on the charts with a dashed line to keep actual and forecast clearly separated.
+
+## Architecture
 
 ```text
-┌──────────────────────┐
-│      Frontend        │
-│ React + TypeScript   │
-│ http://localhost:5173│
-└──────────┬───────────┘
-           │ REST
-           ▼
-┌──────────────────────┐
-│        API           │
-│ FastAPI + SQLAlchemy │
-│ http://localhost:8000│
-└───────┬───────┬──────┘
-        │       │
-        │       │ REST forecast orchestration
-        │       ▼
-        │  ┌──────────────────────┐
-        │  │   Forecast Service   │
-        │  │ FastAPI + ARIMA/     │
-        │  │ Prophet + fallback   │
-        │  │ http://localhost:8001│
-        │  └──────────────────────┘
-        │
-        │ SQL queries / persistence
-        ▼
-┌──────────────────────┐
-│      PostgreSQL      │
-│ master data, prezzi, │
-│ consuntivi, forecast │
-└──────────────────────┘
+┌──────────────────────────────┐
+│ Frontend                     │
+│ React + TypeScript + Vite    │
+│ http://localhost:5173        │
+└───────────────┬──────────────┘
+                │ REST
+                ▼
+┌──────────────────────────────┐
+│ API                          │
+│ FastAPI + SQLAlchemy 2.0     │
+│ http://localhost:8000        │
+└───────────┬───────────┬──────┘
+            │           │
+            │           │ Forecast orchestration
+            │           ▼
+            │   ┌──────────────────────────┐
+            │   │ Forecast Service         │
+            │   │ FastAPI + ARIMA/Prophet  │
+            │   │ + RF/GB + fallback       │
+            │   │ http://localhost:8001    │
+            │   └──────────────────────────┘
+            │
+            │ SQL persistence and queries
+            ▼
+┌──────────────────────────────┐
+│ PostgreSQL                   │
+│ prices, plant master data,   │
+│ production, forecast runs    │
+└──────────────────────────────┘
 
-        API event tracking
-               │
-               ▼
-┌──────────────────────┐
-│       MongoDB        │
-│ user action events   │
-│ session traceability │
-└──────────────────────┘
+            API event tracking
+                    │
+                    ▼
+┌──────────────────────────────┐
+│ MongoDB                      │
+│ user action events           │
+│ future session traceability  │
+└──────────────────────────────┘
 ```
 
-### Flusso principale
+## Main runtime flow
 
-1. Il frontend legge filtri, KPI e serie dal backend.
-2. Il backend aggrega dati da PostgreSQL in granularità `15m` o `1h`.
-3. L'utente lancia un forecast dal `Forecast Engine`.
-4. Il backend costruisce la serie storica aggregata, chiama il `forecast-service`, persiste i run SQL e restituisce il risultato.
-5. Il frontend innesta il forecast sui grafici esistenti.
-6. Le azioni principali dell'utente vengono inviate a `POST /events/actions` e salvate su MongoDB.
+1. The frontend fetches filters, summary data, and time series from the API.
+2. The API reads source data from PostgreSQL and aggregates it at `15m` or `1h`.
+3. The user launches a forecast from the `Forecast Engine`.
+4. The API builds the requested historical signal, calls the forecast microservice, persists forecast runs, and returns the result.
+5. The frontend overlays the forecast on the existing charts.
+6. Main user actions are posted to `POST /events/actions` and stored in MongoDB.
 
-## Servizi docker compose
+## Docker compose services
 
-- `frontend`: UI Vite su `http://localhost:5173`
-- `api`: backend FastAPI su `http://localhost:8000`
-- `forecast-service`: microservizio forecast su `http://localhost:8001`
-- `postgres`: database relazionale su `localhost:5432`
-- `mongo`: event store non relazionale su `localhost:27017`
+- `frontend`: Vite UI on `http://localhost:5173`
+- `api`: FastAPI backend on `http://localhost:8000`
+- `forecast-service`: forecasting microservice on `http://localhost:8001`
+- `postgres`: relational database on `localhost:5432`
+- `mongo`: non-relational event store on `localhost:27017`
 
-## Avvio rapido
+## Quick start
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-L'API esegue automaticamente:
+On startup, the API automatically runs:
 
 - `alembic upgrade head`
-- bootstrap del dataset sintetico se il database è vuoto
+- demo-data bootstrap if the relational database is empty
 
-Se vuoi rilanciare i passaggi manualmente:
+Manual equivalents:
 
 ```bash
 docker compose run --rm api alembic upgrade head
@@ -99,49 +110,88 @@ docker compose run --rm api python scripts/seed_demo_data.py --write-db --trunca
 docker compose run --rm api python scripts/validate_seed.py --days 60
 ```
 
-## Dataset sintetico
+## Synthetic dataset
 
-Caratteristiche correnti:
+Current demo characteristics:
 
-- 60 giorni di storico
-- frequenza sorgente `15m`
-- 50 `pv`, 10 `wind`, 5 `hydro`, 10 `gas`
-- anagrafica impianti completa
-- prezzi e consuntivi in tabelle separate
-- aggregazione oraria derivata lato query
-- validazione copertura e plausibilità inclusa
+- `60 days` of history
+- `15m` source frequency
+- `50 pv`, `10 wind`, `5 hydro`, `10 gas`
+- separate price and production tables
+- full plant master data with:
+  - plant name
+  - unique plant code
+  - market zone
+  - technology
+  - nominal power
+- hourly aggregation derived at query time
+- plausibility and coverage validation included
+
+The production profiles are intentionally technology-aware:
+
+- `PV`: day/night pattern plus seasonal behavior
+- `Wind`: more stochastic and autocorrelated
+- `Hydro`: slower regime changes and longer inertia
+- `Gas`: stable around nominal output with occasional curtailment windows
 
 ## Forecast engine
 
-Modelli supportati:
+### Portfolio Manager
 
-- `ARIMA` come baseline statistica veloce
-- `Prophet` come baseline avanzata
-- `naive seasonal` come fallback del microservizio quando il modello richiesto fallisce o lo storico è insufficiente
+Available models:
 
-Orizzonti supportati:
+- `ARIMA`
+- `Prophet`
 
-- `intraday` = prossime 24h
-- `day-ahead` = prossime 48h
+### Data Analyst
 
-Target supportati dalla UI:
+Available models:
 
-- `prezzo`
+- `ARIMA`
+- `Prophet`
+- `RandomForest`
+- `GradientBoosting`
+
+### Shared forecast behavior
+
+- chronological split: first `80%` training, last `20%` validation
+- validation metrics returned:
+  - `MAE`
+  - `MAPE`
+  - validation period
+  - total processing time
+- output scopes supported for production:
+  - portfolio
+  - market zone
+  - single plant
+- microservice fallback:
+  - simple seasonal fallback if the requested model fails or history is insufficient
+
+### Forecast targets
+
+- `price`
 - `volume`
-- `prezzo e volume`
+- `price and volume`
 
-## Event tracking utente
+### Forecast horizons
 
-Il backend espone `POST /events/actions` per registrare azioni funzionali dell'utente. Gli eventi oggi includono:
+- `intraday` = next `24h`
+- `day-ahead` = next `48h`
 
-- cambio persona
-- cambio tema
-- cambio granularità
-- cambio finestra temporale nei monitor
-- richiesta forecast
-- completamento forecast
+## User event tracking
 
-Ogni evento salva, quando disponibile:
+The backend exposes `POST /events/actions` to store relevant UI actions. Tracked events currently include:
+
+- profile changes
+- theme changes
+- granularity changes
+- monitor time-window changes
+- analyst production-view changes
+- plant selections
+- forecast requests
+- forecast completions
+
+Stored event fields include, when available:
 
 - `session_id`
 - `event_name`
@@ -150,10 +200,15 @@ Ogni evento salva, quando disponibile:
 - `user_role`
 - `theme`
 - `granularity`
-- `context` e `payload`
-- metadati request (`request_id`, `path`, `client_host`, `user_agent`)
+- `context`
+- `payload`
+- request metadata:
+  - `request_id`
+  - `path`
+  - `client_host`
+  - `user_agent`
 
-## Endpoint principali
+## Main endpoints
 
 - `GET /health`
 - `GET /ready`
@@ -199,7 +254,7 @@ docker compose config
 docker compose ps
 ```
 
-## Smoke test suggeriti
+## Recommended smoke tests
 
 ```bash
 curl -s http://localhost:8000/health
@@ -214,25 +269,24 @@ curl -s -X POST http://localhost:8000/events/actions \
   -d '{"events":[{"event_name":"smoke_test","surface":"manual","outcome":"attempted"}]}'
 ```
 
-Per verificare che Mongo stia ricevendo eventi:
+To verify that MongoDB is receiving events:
 
 ```bash
 docker compose exec mongo mongosh --quiet --eval 'db.getSiblingDB("energy_monitor").user_action_events.find({}, { event_name: 1, surface: 1, outcome: 1 }).limit(5).toArray()'
 ```
 
-## Variabili ambiente
+## Environment variables
 
-`.env.example` copre:
+`.env.example` covers:
 
-- runtime base: `APP_ENV`, `LOG_LEVEL`, `TZ`
+- base runtime: `APP_ENV`, `LOG_LEVEL`, `TZ`
 - PostgreSQL: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL`
 - backend: `FORECAST_SERVICE_URL`, `CORS_ORIGINS`
 - MongoDB: `MONGO_ENABLED`, `MONGO_URL`, `MONGO_DATABASE`, `MONGO_ACTION_COLLECTION`
 - frontend: `VITE_API_BASE_URL`, `VITE_FORECAST_API_BASE_URL`
 
-## Limiti noti
+## Known limitations
 
-- La vista `Data Analyst` non è ancora differenziata.
-- Il forecast mostrato in pagina è quello appena richiesto dall'utente; il reload pagina non ricarica ancora automaticamente l'ultimo run persistito.
-- Il bundle frontend è ancora migliorabile con code splitting.
-- `ARIMA` può produrre warning di convergenza non bloccanti in alcuni test.
+- The page still restores only the forecast run generated in the current session, not the latest persisted run after refresh.
+- The frontend bundle still deserves code splitting.
+- `ARIMA` can emit non-blocking convergence warnings in some scenarios.

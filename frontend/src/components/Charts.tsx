@@ -95,7 +95,7 @@ function tooltipFormatter(value: number | string | Array<string | number> | null
     return value.join(" / ");
   }
   if (typeof value === "number") {
-    return value.toLocaleString("it-IT", { maximumFractionDigits: 2 });
+    return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
   }
   return value ?? "--";
 }
@@ -294,6 +294,108 @@ export function MonitorStackedAreaChart({
   );
 }
 
+export function DualAxisProductionPriceChart({
+  data,
+  productionSeriesKeys,
+  labelMap = {},
+}: {
+  data: ChartDatum[];
+  productionSeriesKeys: string[];
+  labelMap?: Record<string, string>;
+}) {
+  return (
+    <div className="chart-shell">
+      <ResponsiveContainer width="100%" height={340}>
+        <ComposedChart data={data}>
+          <defs>
+            {productionSeriesKeys.map((seriesKey) => (
+              <linearGradient
+                key={seriesKey}
+                id={`dual-gradient-${seriesKey}`}
+                x1="0"
+                x2="0"
+                y1="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor={technologyPalette[seriesKey] ?? "#60a5fa"}
+                  stopOpacity={0.42}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={technologyPalette[seriesKey] ?? "#60a5fa"}
+                  stopOpacity={0.06}
+                />
+              </linearGradient>
+            ))}
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-color)" />
+          <XAxis dataKey="label" minTickGap={32} stroke="var(--muted-color)" />
+          <YAxis yAxisId="production" stroke="var(--muted-color)" />
+          <YAxis yAxisId="price" orientation="right" stroke="var(--muted-color)" />
+          <Tooltip
+            contentStyle={{
+              background: "var(--surface-raised)",
+              border: "1px solid var(--border-color)",
+              borderRadius: 16,
+            }}
+            formatter={tooltipFormatter}
+          />
+          <Legend />
+          {productionSeriesKeys.map((seriesKey) => (
+            <Area
+              key={seriesKey}
+              yAxisId="production"
+              type="monotone"
+              dataKey={seriesKey}
+              name={labelMap[seriesKey] ?? seriesKey.toUpperCase()}
+              stackId="production"
+              stroke={technologyPalette[seriesKey] ?? "#60a5fa"}
+              fill={`url(#dual-gradient-${seriesKey})`}
+              strokeWidth={1.8}
+              dot={false}
+            />
+          ))}
+          {data.some((row) => row.productionForecast !== null && row.productionForecast !== undefined) ? (
+            <Line
+              yAxisId="production"
+              type="monotone"
+              dataKey="productionForecast"
+              name={labelMap.productionForecast ?? "Production forecast"}
+              stroke="#0f766e"
+              strokeDasharray="7 4"
+              strokeWidth={2.8}
+              dot={false}
+            />
+          ) : null}
+          <Line
+            yAxisId="price"
+            type="monotone"
+            dataKey="priceActual"
+            name={labelMap.priceActual ?? "Price"}
+            stroke="#ffffff"
+            strokeWidth={3.2}
+            dot={false}
+          />
+          {data.some((row) => row.priceForecast !== null && row.priceForecast !== undefined) ? (
+            <Line
+              yAxisId="price"
+              type="monotone"
+              dataKey="priceForecast"
+              name={labelMap.priceForecast ?? "Price forecast"}
+              stroke="#ffffff"
+              strokeDasharray="7 4"
+              strokeWidth={3.2}
+              dot={false}
+            />
+          ) : null}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export function ActualForecastChart({
   data,
   title,
@@ -340,8 +442,7 @@ export function ActualForecastChart({
         </ComposedChart>
       </ResponsiveContainer>
       <p className="legend-note">
-        Actual in blu pieno, forecast in ambra tratteggiato per mantenere una
-        distinzione visiva immediata.
+        Actual uses a solid blue line, while forecast uses a dashed amber line for instant visual separation.
       </p>
     </ChartFrame>
   );

@@ -11,6 +11,7 @@ import type {
   ForecastExecutionResponse,
   ForecastFormState,
   ForecastModelType,
+  ForecastProductionScope,
   ForecastRunDetailResponse,
   UserRole,
 } from "../types/api";
@@ -31,7 +32,11 @@ interface ForecastEnginePanelProps {
     modelType: ForecastModelType,
     nextSettings: ForecastAdvancedSettings,
   ) => void;
-  onSubmit: (overrideSettings?: ForecastAdvancedSettings) => void;
+  onSubmit: (options?: {
+    advancedSettings?: ForecastAdvancedSettings;
+    productionScope?: ForecastProductionScope;
+    productionTargetCode?: string | null;
+  }) => void;
 }
 
 interface ResultSummary {
@@ -63,12 +68,12 @@ function formatMae(
   unit: string | null,
 ): string {
   if (value === null) {
-    return "MAE n/d";
+    return "MAE n/a";
   }
   const normalizedUnit =
     unit === "EUR/MWh" ? "€/MWh" : unit === "MWh" ? "MWh" : unit ?? "";
   const suffix = normalizedUnit ? ` ${normalizedUnit}` : "";
-  return `MAE ${value.toLocaleString("it-IT", {
+  return `MAE ${value.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}${suffix}`;
@@ -76,9 +81,9 @@ function formatMae(
 
 function formatMape(value: number | null): string {
   if (value === null) {
-    return "MAPE n/d";
+    return "MAPE n/a";
   }
-  return `MAPE ${value.toLocaleString("it-IT", {
+  return `MAPE ${value.toLocaleString("en-US", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}%`;
@@ -93,17 +98,17 @@ function buildResultSummary(run: ForecastRunDetailResponse): ResultSummary {
   const fallbackReason = readMetadataString(run, "error_summary");
 
   return {
-    label: run.signal_type === "price" ? "Prezzo" : "Volume",
+    label: run.signal_type === "price" ? "Price" : "Volume",
     mae: formatMae(mae, maeUnit),
     mape: formatMape(mape),
     validationPeriod:
       validationStart && validationEnd
-        ? `Validazione: ${formatDateTime(validationStart)} - ${formatDateTime(validationEnd)}`
-        : "Validazione: periodo non disponibile",
+        ? `Validation: ${formatDateTime(validationStart)} - ${formatDateTime(validationEnd)}`
+        : "Validation: period unavailable",
     fallbackNote: run.fallback_used
       ? fallbackReason
-        ? `Fallback attivo: ${fallbackReason}`
-        : "Fallback attivo sul modello stagionale semplice."
+        ? `Fallback active: ${fallbackReason}`
+        : "Fallback active on the simple seasonal model."
       : null,
   };
 }
@@ -136,13 +141,13 @@ export function ForecastEnginePanel({
   );
   const processingCopy = useMemo(() => {
     if (response?.processing_ms !== null && response?.processing_ms !== undefined) {
-      return `${(response.processing_ms / 1000).toLocaleString("it-IT", {
+      return `${(response.processing_ms / 1000).toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })} s`;
     }
     if (errorProcessingMs !== null && errorProcessingMs !== undefined) {
-      return `${(errorProcessingMs / 1000).toLocaleString("it-IT", {
+      return `${(errorProcessingMs / 1000).toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })} s`;
@@ -168,7 +173,7 @@ export function ForecastEnginePanel({
   function handleSaveAndRunAdvanced() {
     onAdvancedSettingsSave(value.modelType, draftSettings);
     setIsAdvancedOpen(false);
-    onSubmit(draftSettings);
+    onSubmit({ advancedSettings: draftSettings });
   }
 
   return (
@@ -182,14 +187,14 @@ export function ForecastEnginePanel({
       >
         <div className="forecast-engine-form">
           <label className="field">
-            <span className="field-heading">
-              <span className="filter-label">Model</span>
-              <HelpTooltip
-                label="Aiuto Model"
+              <span className="field-heading">
+                <span className="filter-label">Model</span>
+                <HelpTooltip
+                label="Help Model"
                 text={
                   role === "portfolioManager"
-                    ? "Scegli il motore previsionale. ARIMA e' rapido e lineare, Prophet gestisce meglio trend e stagionalita'."
-                    : "Il Profilo Analyst puo' attivare anche modelli ad alberi con feature derivate da storico e calendario."
+                    ? "Choose the forecasting engine. ARIMA is fast and linear, while Prophet is better at handling trend and seasonality."
+                    : "The Data Analyst profile can also use tree-based models with historical and calendar-derived features."
                 }
               />
             </span>
@@ -213,14 +218,14 @@ export function ForecastEnginePanel({
 
           <label className="field">
             <span className="field-heading">
-              <span className="filter-label">Orizzonte</span>
+              <span className="filter-label">Horizon</span>
               <HelpTooltip
-                label="Aiuto Orizzonte"
-                text="Definisce quanto avanti si estende la previsione. Intraday copre 24h, day-ahead copre 48h."
+                label="Help Horizon"
+                text="Defines how far the forecast extends. Intraday covers 24h, day-ahead covers 48h."
               />
             </span>
             <select
-              aria-label="Orizzonte"
+              aria-label="Horizon"
               value={value.horizon}
               onChange={(event) =>
                 onChange({
@@ -236,14 +241,14 @@ export function ForecastEnginePanel({
 
           <label className="field">
             <span className="field-heading">
-              <span className="filter-label">Cosa prevedere</span>
+              <span className="filter-label">Forecast target</span>
               <HelpTooltip
-                label="Aiuto Cosa prevedere"
-                text="Scegli se proiettare prezzi, volumi o entrambi. Il risultato compare subito nei due grafici in alto."
+                label="Help Forecast target"
+                text="Choose whether to project price, volume, or both. The result appears immediately on the upper charts."
               />
             </span>
             <select
-              aria-label="Cosa prevedere"
+              aria-label="Forecast target"
               value={value.targetKind}
               onChange={(event) =>
                 onChange({
@@ -252,20 +257,20 @@ export function ForecastEnginePanel({
                 })
               }
             >
-              <option value="price">prezzo</option>
+              <option value="price">price</option>
               <option value="volume">volume</option>
-              <option value="both">prezzo e volume</option>
+              <option value="both">price and volume</option>
             </select>
           </label>
 
           <div className="forecast-engine-actions">
-            <button
+              <button
               type="button"
               className="primary-button"
               disabled={isSubmitting}
               onClick={() => onSubmit()}
             >
-              {isSubmitting ? "Forecast in esecuzione..." : "RUN"}
+              {isSubmitting ? "Forecast running..." : "RUN"}
             </button>
 
             {role === "dataAnalyst" ? (
@@ -275,7 +280,7 @@ export function ForecastEnginePanel({
                 disabled={isSubmitting}
                 onClick={() => setIsAdvancedOpen(true)}
               >
-                IMPOSTAZIONI AVANZATE
+                ADVANCED SETTINGS
               </button>
             ) : null}
           </div>
@@ -285,14 +290,14 @@ export function ForecastEnginePanel({
           {isSubmitting ? (
             <div className="forecast-status-card">
               <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-neutral">RISULTATI</p>
+                <p className="forecast-status-title forecast-status-title-neutral">RESULTS</p>
               </div>
-              <LoadingBattery label="Training, validazione 80/20 e inferenza in corso sul portfolio aggregato." />
+              <LoadingBattery label="Training, 80/20 validation, and inference are running on the requested signal." />
             </div>
           ) : error ? (
             <div className="forecast-status-card forecast-status-error">
               <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-error">ERRORI</p>
+                <p className="forecast-status-title forecast-status-title-error">ERRORS</p>
                 {processingCopy ? <span className="forecast-status-timing">{processingCopy}</span> : null}
               </div>
               <p className="forecast-status-copy">
@@ -302,13 +307,10 @@ export function ForecastEnginePanel({
           ) : response ? (
             <div className="forecast-status-card">
               <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-success">RISULTATI</p>
+                <p className="forecast-status-title forecast-status-title-success">RESULTS</p>
                 {processingCopy ? <span className="forecast-status-timing">{processingCopy}</span> : null}
               </div>
-              <p className="forecast-status-copy">
-                Split cronologico 80/20 completato. Di seguito trovi MAE, MAPE e periodo di validazione per ogni segnale eseguito.
-              </p>
-              <ul className="forecast-status-list">
+              <ul className="forecast-status-list forecast-status-list-compact">
                 {resultSummaries.map((summary) => (
                   <li key={summary.label}>
                     <strong>{summary.label}</strong>
@@ -323,15 +325,15 @@ export function ForecastEnginePanel({
           ) : (
             <div className="forecast-status-card">
               <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-neutral">RISULTATI</p>
+                <p className="forecast-status-title forecast-status-title-neutral">RESULTS</p>
               </div>
               <p className="forecast-status-copy">
-                Premi RUN per vedere metriche di validazione, tempo totale di processamento e overlay forecast nei grafici superiori.
+                Press RUN to display validation metrics, total processing time, and the forecast overlay on the upper charts.
               </p>
               <p className="forecast-status-copy forecast-status-copy-secondary">
                 {role === "dataAnalyst"
-                  ? `Per ${value.modelType} puoi aprire le impostazioni avanzate e salvare ${hyperparametersByModel[value.modelType].length} iperparametri.`
-                  : "Il Profilo Portfolio Manager espone i modelli essenziali ARIMA e Prophet."}
+                  ? `For ${value.modelType}, you can open advanced settings and save ${hyperparametersByModel[value.modelType].length} hyperparameters.`
+                  : "The Portfolio Manager profile focuses on the essential ARIMA and Prophet models."}
               </p>
             </div>
           )}

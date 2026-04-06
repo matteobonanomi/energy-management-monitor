@@ -26,7 +26,7 @@ const arimaHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "order_p",
     label: "order_p",
-    helpText: "Conta quanta memoria immediata usa il modello autoregressivo.",
+    helpText: "Controls how much immediate autoregressive memory the model uses.",
     inputType: "number",
     defaultValue: 2,
     min: 0,
@@ -36,7 +36,7 @@ const arimaHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "order_d",
     label: "order_d",
-    helpText: "Indica quante differenze applicare per rendere piu' stabile la serie.",
+    helpText: "Sets how many differences to apply to stabilize the series.",
     inputType: "number",
     defaultValue: 1,
     min: 0,
@@ -46,7 +46,7 @@ const arimaHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "order_q",
     label: "order_q",
-    helpText: "Definisce quanta memoria assegnare agli errori recenti del modello.",
+    helpText: "Defines how much memory is assigned to recent model errors.",
     inputType: "number",
     defaultValue: 2,
     min: 0,
@@ -56,7 +56,7 @@ const arimaHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "trend",
     label: "trend",
-    helpText: "Sceglie se il modello deve forzare un livello o una tendenza deterministica.",
+    helpText: "Chooses whether the model should enforce a level or a deterministic trend.",
     inputType: "select",
     defaultValue: "n",
     options: [
@@ -69,21 +69,21 @@ const arimaHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "enforce_stationarity",
     label: "enforce_stationarity",
-    helpText: "Se attivo, impedisce soluzioni che rendono la dinamica instabile.",
+    helpText: "When enabled, it blocks solutions that would make the dynamics unstable.",
     inputType: "boolean",
     defaultValue: true,
   },
   {
     key: "enforce_invertibility",
     label: "enforce_invertibility",
-    helpText: "Se attivo, evita combinazioni che rendono il filtro MA poco interpretabile.",
+    helpText: "When enabled, it avoids MA-filter combinations that are harder to interpret.",
     inputType: "boolean",
     defaultValue: true,
   },
   {
     key: "maxiter",
     label: "maxiter",
-    helpText: "Numero massimo di iterazioni usate per stimare il modello.",
+    helpText: "Maximum number of iterations used to estimate the model.",
     inputType: "number",
     defaultValue: 50,
     min: 10,
@@ -96,7 +96,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "changepoint_prior_scale",
     label: "changepoint_prior_scale",
-    helpText: "Regola quanto facilmente Prophet accetta cambi di trend.",
+    helpText: "Controls how easily Prophet accepts trend changes.",
     inputType: "number",
     defaultValue: 0.05,
     min: 0.001,
@@ -106,7 +106,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "seasonality_prior_scale",
     label: "seasonality_prior_scale",
-    helpText: "Controlla quanta importanza assegnare alle stagionalita' ricorrenti.",
+    helpText: "Controls how much weight to assign to recurring seasonal patterns.",
     inputType: "number",
     defaultValue: 10,
     min: 0.1,
@@ -116,7 +116,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "holidays_prior_scale",
     label: "holidays_prior_scale",
-    helpText: "Pesa eventuali effetti speciali assimilati a eventi o anomalie di calendario.",
+    helpText: "Weights special effects that behave like events or calendar anomalies.",
     inputType: "number",
     defaultValue: 10,
     min: 0.1,
@@ -126,7 +126,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "seasonality_mode",
     label: "seasonality_mode",
-    helpText: "Decide se la stagionalita' si somma al livello o cresce con esso.",
+    helpText: "Defines whether seasonality is additive or grows with the level.",
     inputType: "select",
     defaultValue: "additive",
     options: [
@@ -137,7 +137,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "n_changepoints",
     label: "n_changepoints",
-    helpText: "Numero massimo di punti in cui Prophet puo' piegare il trend.",
+    helpText: "Maximum number of points where Prophet can bend the trend.",
     inputType: "number",
     defaultValue: 25,
     min: 0,
@@ -147,7 +147,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "interval_width",
     label: "interval_width",
-    helpText: "Ampiezza dell'intervallo di confidenza calcolato dal modello.",
+    helpText: "Width of the confidence interval produced by the model.",
     inputType: "number",
     defaultValue: 0.8,
     min: 0.05,
@@ -157,7 +157,7 @@ const prophetHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "weekly_seasonality",
     label: "weekly_seasonality",
-    helpText: "Se attivo, Prophet cerca pattern specifici tra i diversi giorni della settimana.",
+    helpText: "When enabled, Prophet looks for day-of-week patterns.",
     inputType: "boolean",
     defaultValue: true,
   },
@@ -167,7 +167,7 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "n_estimators",
     label: "n_estimators",
-    helpText: "Numero di alberi usati in parallelo per rendere la previsione piu' stabile.",
+    helpText: "Number of trees used in parallel to make the forecast more stable.",
     inputType: "number",
     defaultValue: 100,
     min: 10,
@@ -177,7 +177,7 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "max_depth",
     label: "max_depth",
-    helpText: "Limita la profondita' massima di ogni albero. Vuoto significa nessun limite.",
+    helpText: "Limits the maximum depth of each tree. Empty means no hard limit.",
     inputType: "nullable-number",
     defaultValue: null,
     min: 1,
@@ -187,7 +187,7 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "min_samples_split",
     label: "min_samples_split",
-    helpText: "Numero minimo di esempi necessari per dividere un nodo.",
+    helpText: "Minimum number of samples required to split a node.",
     inputType: "number",
     defaultValue: 2,
     min: 2,
@@ -197,7 +197,7 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "min_samples_leaf",
     label: "min_samples_leaf",
-    helpText: "Numero minimo di esempi che devono restare in ogni foglia finale.",
+    helpText: "Minimum number of samples that must remain in each terminal leaf.",
     inputType: "number",
     defaultValue: 1,
     min: 1,
@@ -207,7 +207,7 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "max_features",
     label: "max_features",
-    helpText: "Quota di feature considerate in ogni split dell'albero.",
+    helpText: "Share of features considered at each tree split.",
     inputType: "number",
     defaultValue: 1,
     min: 0.1,
@@ -217,14 +217,14 @@ const randomForestHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "bootstrap",
     label: "bootstrap",
-    helpText: "Se attivo, ogni albero vede un campione casuale del training set.",
+    helpText: "When enabled, each tree sees a random sample of the training set.",
     inputType: "boolean",
     defaultValue: true,
   },
   {
     key: "random_state",
     label: "random_state",
-    helpText: "Fissa il seme casuale per rendere la demo piu' ripetibile.",
+    helpText: "Locks the random seed to make the demo more repeatable.",
     inputType: "nullable-number",
     defaultValue: 42,
     min: 0,
@@ -237,7 +237,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "n_estimators",
     label: "n_estimators",
-    helpText: "Numero di stadi sequenziali che correggono progressivamente gli errori.",
+    helpText: "Number of sequential stages that progressively correct errors.",
     inputType: "number",
     defaultValue: 100,
     min: 10,
@@ -247,7 +247,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "learning_rate",
     label: "learning_rate",
-    helpText: "Quanto forte incide ogni nuovo stadio sulla previsione finale.",
+    helpText: "How strongly each new stage affects the final prediction.",
     inputType: "number",
     defaultValue: 0.1,
     min: 0.01,
@@ -257,7 +257,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "max_depth",
     label: "max_depth",
-    helpText: "Profondita' massima degli alberi base usati dal boosting.",
+    helpText: "Maximum depth of the base trees used by boosting.",
     inputType: "number",
     defaultValue: 3,
     min: 1,
@@ -267,7 +267,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "min_samples_split",
     label: "min_samples_split",
-    helpText: "Numero minimo di esempi necessari per creare una nuova divisione.",
+    helpText: "Minimum number of samples required to create a new split.",
     inputType: "number",
     defaultValue: 2,
     min: 2,
@@ -277,7 +277,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "min_samples_leaf",
     label: "min_samples_leaf",
-    helpText: "Numero minimo di esempi richiesti in una foglia finale.",
+    helpText: "Minimum number of samples required in a terminal leaf.",
     inputType: "number",
     defaultValue: 1,
     min: 1,
@@ -287,7 +287,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "subsample",
     label: "subsample",
-    helpText: "Quota del dataset usata a ogni stadio del boosting.",
+    helpText: "Share of the dataset used at each boosting stage.",
     inputType: "number",
     defaultValue: 1,
     min: 0.1,
@@ -297,7 +297,7 @@ const gradientBoostingHyperparameters: ForecastHyperparameterDefinition[] = [
   {
     key: "random_state",
     label: "random_state",
-    helpText: "Fissa il seme casuale per rendere le esecuzioni confrontabili.",
+    helpText: "Locks the random seed to keep runs comparable.",
     inputType: "nullable-number",
     defaultValue: 42,
     min: 0,
@@ -310,35 +310,35 @@ export const forecastModelOptionsByRole: Record<UserRole, ForecastModelOption[]>
   portfolioManager: [
     {
       value: "arima",
-      label: "statistico (ARIMA)",
-      helpText: "ARIMA e' rapido e leggibile. Funziona bene su pattern lineari e regolari.",
+      label: "Statistical (ARIMA)",
+      helpText: "ARIMA is fast and readable. It works well on linear and regular patterns.",
     },
     {
       value: "prophet",
-      label: "avanzato (Prophet)",
-      helpText: "Prophet gestisce meglio trend e stagionalita' complesse.",
+      label: "Advanced (Prophet)",
+      helpText: "Prophet handles complex trend and seasonality more effectively.",
     },
   ],
   dataAnalyst: [
     {
       value: "arima",
       label: "ARIMA",
-      helpText: "Baseline statistica classica per serie temporali.",
+      helpText: "Classic statistical baseline for time series.",
     },
     {
       value: "prophet",
       label: "Prophet",
-      helpText: "Modello additivo robusto a trend e stagionalita'.",
+      helpText: "Additive model that is robust to trend and seasonality.",
     },
     {
       value: "random_forest",
       label: "RandomForest",
-      helpText: "Ensemble ad alberi con feature di rolling e calendario.",
+      helpText: "Tree ensemble with rolling and calendar-based features.",
     },
     {
       value: "gradient_boosting",
       label: "GradientBoosting",
-      helpText: "Boosting sequenziale su feature di rolling e calendario.",
+      helpText: "Sequential boosting over rolling and calendar-based features.",
     },
   ],
 };

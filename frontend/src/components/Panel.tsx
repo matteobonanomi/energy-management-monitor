@@ -6,6 +6,7 @@ interface SectionCardProps {
   subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
+  className?: string;
 }
 
 export function SectionCard({
@@ -14,9 +15,10 @@ export function SectionCard({
   subtitle,
   children,
   actions,
+  className,
 }: SectionCardProps) {
   return (
-    <section className="card panel-card">
+    <section className={className ? `card panel-card ${className}` : "card panel-card"}>
       <div className="panel-header">
         <div>
           {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}

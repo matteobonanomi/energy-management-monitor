@@ -26,7 +26,7 @@ export function useFiltersData() {
         setError(
           reason instanceof Error
             ? reason.message
-            : "Impossibile caricare i filtri disponibili.",
+            : "Unable to load the available filters.",
         );
       })
       .finally(() => {

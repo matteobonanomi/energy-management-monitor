@@ -59,21 +59,21 @@ export function FilterBar({
       <div className="filters-header">
         <div>
           <p className="eyebrow">Filters</p>
-          <h2>Contesto operativo</h2>
+          <h2>Operating context</h2>
           <p className="muted">
             {role === "portfolioManager"
-              ? "Filtri essenziali per lettura di portafoglio e pricing."
-              : "Filtri estesi per drill-down e verifica dei pattern di serie."}
+              ? "Essential filters for portfolio monitoring and pricing."
+              : "Extended filters for drill-down and time-series pattern checks."}
           </p>
         </div>
         <button type="button" className="ghost-button" onClick={onReset}>
-          Reset filtri
+          Reset filters
         </button>
       </div>
 
       <div className="filters-layout">
         <div className="filter-group">
-          <span className="filter-label">Tecnologie</span>
+          <span className="filter-label">Technologies</span>
           <div className="chip-row">
             {filtersData?.technologies.map((technology) => (
               <FilterChip
@@ -113,7 +113,7 @@ export function FilterBar({
         </div>
 
         <label className="field">
-          <span className="filter-label">Sessione di mercato</span>
+          <span className="filter-label">Market session</span>
           <select
             value={value.marketSession}
             onChange={(event) =>
@@ -129,14 +129,14 @@ export function FilterBar({
         </label>
 
         <label className="field">
-          <span className="filter-label">Impianto focus</span>
+          <span className="filter-label">Plant focus</span>
           <select
             value={value.plantCode}
             onChange={(event) =>
               onChange({ ...value, plantCode: event.target.value })
             }
           >
-            <option value="">Portfolio / aggregato</option>
+            <option value="">Portfolio / aggregated</option>
             {filteredPlants.map((plant) => (
               <option key={plant.code} value={plant.code}>
                 {plant.code} · {plant.name}
@@ -146,7 +146,7 @@ export function FilterBar({
         </label>
 
         <label className="field">
-          <span className="filter-label">Data da</span>
+          <span className="filter-label">Date from</span>
           <input
             type="datetime-local"
             value={value.dateFrom}
@@ -157,7 +157,7 @@ export function FilterBar({
         </label>
 
         <label className="field">
-          <span className="filter-label">Data a</span>
+          <span className="filter-label">Date to</span>
           <input
             type="datetime-local"
             value={value.dateTo}

@@ -36,10 +36,10 @@ export function ForecastLabView({
         granularity,
         market_session: "MGP",
       });
-      setStatusMessage(`Run completati: ${response.runs.length}`);
+      setStatusMessage(`Completed runs: ${response.runs.length}`);
     } catch (reason) {
       setStatusMessage(
-        reason instanceof Error ? reason.message : "Errore durante l'esecuzione forecast.",
+        reason instanceof Error ? reason.message : "Forecast execution failed.",
       );
     } finally {
       setSubmitting(false);
@@ -51,7 +51,7 @@ export function ForecastLabView({
       <SectionCard
         eyebrow="Legacy view"
         title="Forecast Lab"
-        subtitle="Vista legacy mantenuta per compatibilita interna. Il trigger principale ora vive nella griglia 2x2."
+        subtitle="Legacy view kept for internal compatibility. The main trigger now lives inside the 2x2 dashboard grid."
       >
         <ForecastComposer
           granularity={granularity}
@@ -65,7 +65,7 @@ export function ForecastLabView({
 
       <EmptyPanel
         title="Forecast Lab"
-        message="Usa il pannello Forecast Engine nella schermata principale per vedere il forecast direttamente sui grafici monitor."
+        message="Use the Forecast Engine panel on the main page to display forecasts directly on the monitoring charts."
       />
     </div>
   );

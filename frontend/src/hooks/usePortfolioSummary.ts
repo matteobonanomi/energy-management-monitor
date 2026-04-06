@@ -29,7 +29,7 @@ export function usePortfolioSummary(
         setError(
           reason instanceof Error
             ? reason.message
-            : "Impossibile caricare i KPI di portfolio.",
+            : "Unable to load portfolio KPIs.",
         );
       })
       .finally(() => {

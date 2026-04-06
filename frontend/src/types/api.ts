@@ -11,10 +11,18 @@ export type ForecastModelType =
   | "gradient_boosting";
 export type ForecastSignalType = "production" | "price";
 export type ForecastTargetKind = "price" | "volume" | "both";
+export type ForecastProductionScope = "portfolio" | "zone" | "plant";
 export type TimeWindow = "1w" | "2w" | "1m" | "max";
 export type UserActionOutcome = "changed" | "attempted" | "succeeded" | "failed";
 export type UserActionTrackingStatus = "stored" | "skipped" | "failed";
 export type ForecastAdvancedSettings = Record<string, string | number | boolean | null>;
+export type AnalystProductionView =
+  | "total"
+  | "zoneEST"
+  | "zoneNORD"
+  | "zoneSUD"
+  | "zoneOVEST"
+  | "singlePlant";
 
 export interface TechnologyOption {
   code: string;
@@ -164,6 +172,8 @@ export interface ForecastExecutionRequest {
   granularity: Granularity;
   market_session?: string;
   advanced_settings?: ForecastAdvancedSettings | null;
+  production_scope?: ForecastProductionScope;
+  production_target_code?: string | null;
 }
 
 export interface ForecastExecutionResponse {

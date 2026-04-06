@@ -81,7 +81,7 @@ export function useDashboardData(
         setError(
           reason instanceof Error
             ? reason.message
-            : "Impossibile caricare la dashboard.",
+            : "Unable to load the dashboard.",
         );
       })
       .finally(() => {

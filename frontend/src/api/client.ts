@@ -33,7 +33,7 @@ async function fetchJson<T>(
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(
-        "Backend API non raggiungibile. Verifica che docker compose abbia completato bootstrap, migrazioni e seed del database.",
+        "Backend API unreachable. Check that docker compose finished bootstrap, migrations, and demo-data seeding.",
       );
     }
     throw error;
@@ -42,7 +42,7 @@ async function fetchJson<T>(
     const body = await response.text();
     throw new Error(
       body ||
-        `Richiesta API fallita con stato ${response.status}. Controlla che il database demo sia inizializzato.`,
+        `API request failed with status ${response.status}. Check that the demo database is initialized.`,
     );
   }
   return (await response.json()) as T;

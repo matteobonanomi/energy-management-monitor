@@ -46,10 +46,10 @@ describe("AppHeader", () => {
       />,
     );
 
-    await user.hover(screen.getByRole("button", { name: "Aiuto Profilo" }));
+    await user.hover(screen.getByRole("button", { name: "Help Profile" }));
 
     expect(
-      screen.getByText(/scegli il punto di vista della dashboard/i),
+      screen.getByText(/switch the dashboard perspective/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/what's new/i)).toBeInTheDocument();
   }, 20_000);

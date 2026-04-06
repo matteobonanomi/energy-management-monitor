@@ -103,14 +103,14 @@ export function AdvancedSettingsModal({
         <button
           type="button"
           className="advanced-modal-close"
-          aria-label="Chiudi impostazioni avanzate"
+          aria-label="Close advanced settings"
           onClick={onClose}
         >
           X
         </button>
 
         <div className="advanced-modal-header">
-          <p className="advanced-modal-eyebrow">Impostazioni avanzate</p>
+          <p className="advanced-modal-eyebrow">Advanced settings</p>
           <h3 id="advanced-settings-title">{modelType}</h3>
         </div>
 
@@ -119,7 +119,7 @@ export function AdvancedSettingsModal({
             <div key={definition.key} className="advanced-settings-row">
               <span className="advanced-settings-name">{definition.label}</span>
               <HelpTooltip
-                label={`Aiuto ${definition.label}`}
+                label={`Help ${definition.label}`}
                 text={definition.helpText}
               />
               <div className="advanced-settings-input">

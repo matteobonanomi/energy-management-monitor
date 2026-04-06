@@ -85,3 +85,24 @@ def test_forecast_service_runs_and_persists_requested_targets() -> None:
     assert {run.signal_type for run in response.runs} == {"price", "production"}
     assert all(run.status == "completed" for run in response.runs)
     assert response.processing_ms is not None
+
+
+def test_forecast_service_uses_zone_scope_for_production_when_requested() -> None:
+    session = build_session()
+    service = ForecastService(forecast_client=FakeForecastClient())
+
+    response = service.run_forecast(
+        session,
+        ForecastExecutionRequest(
+            model_type="arima",
+            target_kind="volume",
+            horizon="next_24h",
+            granularity="1h",
+            production_scope="zone",
+            production_target_code="NORD",
+        ),
+    )
+
+    assert response.requested_targets == ["production"]
+    assert response.runs[0].scope == "zone"
+    assert response.runs[0].target_code == "NORD"

@@ -30,7 +30,7 @@ describe("ForecastEnginePanel", () => {
     );
 
     await user.selectOptions(screen.getByLabelText("Model"), "prophet");
-    await user.selectOptions(screen.getByLabelText("Cosa prevedere"), "price");
+    await user.selectOptions(screen.getByLabelText("Forecast target"), "price");
     await user.click(screen.getByRole("button", { name: "RUN" }));
 
     expect(onChange).toHaveBeenCalled();
@@ -59,10 +59,10 @@ describe("ForecastEnginePanel", () => {
       />,
     );
 
-    await user.hover(screen.getByRole("button", { name: "Aiuto Model" }));
+    await user.hover(screen.getByRole("button", { name: "Help Model" }));
 
     expect(
-      screen.getByText(/ARIMA e' rapido e lineare/i),
+      screen.getByText(/ARIMA is fast and linear/i),
     ).toBeInTheDocument();
   }, 20_000);
 
@@ -91,7 +91,7 @@ describe("ForecastEnginePanel", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "IMPOSTAZIONI AVANZATE" }),
+      screen.getByRole("button", { name: "ADVANCED SETTINGS" }),
     );
     await user.clear(screen.getByLabelText("n_estimators"));
     await user.type(screen.getByLabelText("n_estimators"), "150");
@@ -102,7 +102,9 @@ describe("ForecastEnginePanel", () => {
       expect.objectContaining({ n_estimators: 150 }),
     );
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ n_estimators: 150 }),
+      expect.objectContaining({
+        advancedSettings: expect.objectContaining({ n_estimators: 150 }),
+      }),
     );
   }, 20_000);
 
@@ -155,8 +157,8 @@ describe("ForecastEnginePanel", () => {
       />,
     );
 
-    expect(screen.getByText("RISULTATI")).toBeInTheDocument();
-    expect(screen.getByText("MAE 2,34 €/MWh")).toBeInTheDocument();
-    expect(screen.getByText(/MAPE 3,8%/i)).toBeInTheDocument();
+    expect(screen.getByText("RESULTS")).toBeInTheDocument();
+    expect(screen.getByText("MAE 2.34 €/MWh")).toBeInTheDocument();
+    expect(screen.getByText(/MAPE 3.8%/i)).toBeInTheDocument();
   });
 });

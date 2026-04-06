@@ -10,6 +10,7 @@ from app.schemas.shared import TimeSeriesPoint
 ForecastModelType = Literal["arima", "prophet", "random_forest", "gradient_boosting"]
 ForecastSignalType = Literal["production", "price"]
 ForecastTargetKind = Literal["price", "volume", "both"]
+ForecastProductionScope = Literal["portfolio", "zone", "plant"]
 
 
 class ForecastRunListFilters(BaseModel):
@@ -63,6 +64,8 @@ class ForecastExecutionRequest(BaseModel):
     market_session: str = "MGP"
     history_points: int | None = Field(default=None, ge=1)
     advanced_settings: dict | None = None
+    production_scope: ForecastProductionScope = "portfolio"
+    production_target_code: str | None = None
 
 
 class ForecastExecutionResponse(BaseModel):

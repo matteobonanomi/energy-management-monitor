@@ -40,9 +40,9 @@ export function ForecastComposer({
       </label>
 
       <label className="field">
-        <span className="filter-label">Orizzonte</span>
+        <span className="filter-label">Horizon</span>
         <select
-          aria-label="Orizzonte"
+          aria-label="Horizon"
           value={value.horizon}
           onChange={(event) =>
             onChange({
@@ -57,9 +57,9 @@ export function ForecastComposer({
       </label>
 
       <label className="field">
-        <span className="filter-label">Cosa prevedere</span>
+        <span className="filter-label">Forecast target</span>
         <select
-          aria-label="Cosa prevedere"
+          aria-label="Forecast target"
           value={value.targetKind}
           onChange={(event) =>
             onChange({
@@ -68,14 +68,14 @@ export function ForecastComposer({
             })
           }
         >
-          <option value="price">prezzo</option>
+          <option value="price">price</option>
           <option value="volume">volume</option>
-          <option value="both">prezzo e volume</option>
+          <option value="both">price and volume</option>
         </select>
       </label>
 
       <button type="button" className="primary-button" disabled={isSubmitting} onClick={onSubmit}>
-        {isSubmitting ? "Forecast in esecuzione..." : "Lancia forecast"}
+        {isSubmitting ? "Forecast running..." : "Run forecast"}
       </button>
     </div>
   );

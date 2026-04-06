@@ -43,6 +43,8 @@ class ForecastRepository:
         self,
         session: Session,
         *,
+        scope: str,
+        target_code: str | None,
         signal_type: str,
         granularity: str,
         horizon: str,
@@ -50,8 +52,8 @@ class ForecastRepository:
         metadata_json: dict | None,
     ) -> ForecastRun:
         run = ForecastRun(
-            scope="portfolio",
-            target_code=None,
+            scope=scope,
+            target_code=target_code,
             granularity=granularity,
             horizon=horizon,
             signal_type=signal_type,
@@ -104,10 +106,12 @@ class ForecastRepository:
         run.metadata_json = metadata_json
         session.flush()
 
-    def get_portfolio_history(
+    def get_history(
         self,
         session: Session,
         *,
+        scope: str,
+        target_code: str | None,
         signal_type: str,
         granularity: str,
         market_session: str,
@@ -116,6 +120,8 @@ class ForecastRepository:
 
         dashboard_repository = DashboardRepository()
         filters = DashboardQueryFilters(
+            plant_code=[target_code] if scope == "plant" and target_code else [],
+            market_zone=[target_code] if scope == "zone" and target_code else [],
             market_session=market_session,
             granularity=granularity,
             breakdown_by="none",

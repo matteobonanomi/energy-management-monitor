@@ -9,6 +9,7 @@ import type {
   ForecastFormState,
   ForecastRunDetailResponse,
   ForecastModelType,
+  ForecastProductionScope,
   Granularity,
 } from "../types/api";
 
@@ -52,14 +53,20 @@ export function useForecastExecution(granularity: Granularity) {
     }));
   }
 
-  async function runForecast(overrideSettings?: ForecastAdvancedSettings) {
+  async function runForecast(options?: {
+    advancedSettings?: ForecastAdvancedSettings;
+    productionScope?: ForecastProductionScope;
+    productionTargetCode?: string | null;
+  }) {
     const startedAt = performance.now();
     setIsSubmitting(true);
     setError(null);
     setErrorProcessingMs(null);
 
     const activeAdvancedSettings =
-      overrideSettings ?? advancedSettingsByModel[formState.modelType];
+      options?.advancedSettings ?? advancedSettingsByModel[formState.modelType];
+    const productionScope = options?.productionScope ?? "portfolio";
+    const productionTargetCode = options?.productionTargetCode ?? null;
 
     try {
       void trackUserAction({
@@ -72,6 +79,8 @@ export function useForecastExecution(granularity: Granularity) {
           target_kind: formState.targetKind,
           horizon: formState.horizon,
           advanced_settings_keys: Object.keys(activeAdvancedSettings ?? {}),
+          production_scope: productionScope,
+          production_target_code: productionTargetCode,
         },
       });
       const nextResponse = await energyApi.runForecast({
@@ -81,6 +90,8 @@ export function useForecastExecution(granularity: Granularity) {
         granularity,
         market_session: "MGP",
         advanced_settings: activeAdvancedSettings,
+        production_scope: productionScope,
+        production_target_code: productionTargetCode,
       });
       setResponse(nextResponse);
       void trackUserAction({
@@ -92,6 +103,8 @@ export function useForecastExecution(granularity: Granularity) {
           model_type: nextResponse.model_type,
           horizon: nextResponse.horizon,
           run_ids: nextResponse.runs.map((run) => run.id),
+          production_scope: productionScope,
+          production_target_code: productionTargetCode,
         },
       });
     } catch (reason) {
@@ -99,7 +112,7 @@ export function useForecastExecution(granularity: Granularity) {
       setError(
         reason instanceof Error
           ? reason.message
-          : "Impossibile eseguire il forecast richiesto.",
+          : "Unable to run the requested forecast.",
       );
       void trackUserAction({
         eventName: "forecast_run_completed",
@@ -110,12 +123,14 @@ export function useForecastExecution(granularity: Granularity) {
           model_type: formState.modelType,
           target_kind: formState.targetKind,
           horizon: formState.horizon,
+          production_scope: productionScope,
+          production_target_code: productionTargetCode,
         },
         payload: {
           error:
             reason instanceof Error
               ? reason.message
-              : "Impossibile eseguire il forecast richiesto.",
+              : "Unable to run the requested forecast.",
         },
       });
     } finally {

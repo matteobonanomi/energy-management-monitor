@@ -112,8 +112,8 @@ def test_forecast_run_execution_endpoint_returns_persisted_runs(monkeypatch) -> 
             runs=[
                 ForecastRunDetailResponse(
                     id=99,
-                    scope="portfolio",
-                    target_code=None,
+                    scope="zone",
+                    target_code="NORD",
                     granularity="1h",
                     horizon="next_24h",
                     signal_type="price",
@@ -143,12 +143,15 @@ def test_forecast_run_execution_endpoint_returns_persisted_runs(monkeypatch) -> 
             "target_kind": "price",
             "horizon": "next_24h",
             "granularity": "1h",
+            "production_scope": "zone",
+            "production_target_code": "NORD",
         },
     )
 
     assert response.status_code == 200
     assert response.json()["requested_targets"] == ["price"]
     assert response.json()["runs"][0]["signal_type"] == "price"
+    assert response.json()["runs"][0]["scope"] == "zone"
 
 
 def test_user_action_tracking_endpoint_returns_acknowledgement() -> None:

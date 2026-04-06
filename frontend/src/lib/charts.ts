@@ -144,6 +144,67 @@ export function buildStackedMonitorChartData(
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+export function buildDualAxisChartData(
+  productionSeries: NamedSeries[],
+  priceActualPoints: TimeSeriesPoint[],
+  productionForecastPoints: ForecastPoint[],
+  priceForecastPoints: ForecastPoint[],
+): ChartDatum[] {
+  const rows = new Map<string, ChartDatum>();
+
+  for (const series of productionSeries) {
+    for (const point of series.points) {
+      const existing = rows.get(point.timestamp) ?? {
+        timestamp: point.timestamp,
+        label: formatChartLabel(point.timestamp),
+        productionForecast: null,
+        priceActual: null,
+        priceForecast: null,
+      };
+      existing[series.key] = point.value;
+      rows.set(point.timestamp, existing);
+    }
+  }
+
+  for (const point of priceActualPoints) {
+    const existing = rows.get(point.timestamp) ?? {
+      timestamp: point.timestamp,
+      label: formatChartLabel(point.timestamp),
+      productionForecast: null,
+      priceActual: null,
+      priceForecast: null,
+    };
+    existing.priceActual = point.value;
+    rows.set(point.timestamp, existing);
+  }
+
+  for (const point of productionForecastPoints) {
+    const existing = rows.get(point.timestamp) ?? {
+      timestamp: point.timestamp,
+      label: formatChartLabel(point.timestamp),
+      productionForecast: null,
+      priceActual: null,
+      priceForecast: null,
+    };
+    existing.productionForecast = point.value;
+    rows.set(point.timestamp, existing);
+  }
+
+  for (const point of priceForecastPoints) {
+    const existing = rows.get(point.timestamp) ?? {
+      timestamp: point.timestamp,
+      label: formatChartLabel(point.timestamp),
+      productionForecast: null,
+      priceActual: null,
+      priceForecast: null,
+    };
+    existing.priceForecast = point.value;
+    rows.set(point.timestamp, existing);
+  }
+
+  return [...rows.values()].sort(sortByTimestamp);
+}
+
 function sortByTimestamp(left: ChartDatum, right: ChartDatum): number {
   return new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime();
 }

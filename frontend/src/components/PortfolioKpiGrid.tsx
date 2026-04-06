@@ -19,7 +19,7 @@ function formatGwh(value: number | null | undefined): KpiValueParts {
     return { value: "--" };
   }
   return {
-    value: value.toLocaleString("it-IT", {
+    value: value.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }),
@@ -32,7 +32,7 @@ function formatPercent(value: number | null | undefined): KpiValueParts {
     return { value: "--" };
   }
   return {
-    value: value.toLocaleString("it-IT", {
+    value: value.toLocaleString("en-US", {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     }),
@@ -49,7 +49,7 @@ function formatPriceParts(value: number | null | undefined): KpiValueParts {
     return { value: "--" };
   }
   return {
-    value: value.toLocaleString("it-IT", {
+    value: value.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }),
@@ -60,37 +60,37 @@ function formatPriceParts(value: number | null | undefined): KpiValueParts {
 const metricDefinitions = [
   {
     title: "Avg daily Price",
-    helpText: "Prezzo medio del mercato nelle ultime 24 ore. Ti aiuta a leggere il livello recente del mercato.",
+    helpText: "Average market price over the last 24 hours. It gives a quick read of the most recent price level.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatPriceParts(summary?.daily_avg_price_eur_mwh),
   },
   {
     title: "Avg weekly Price",
-    helpText: "Prezzo medio sull'ultima settimana. Smorza il rumore giornaliero e mostra il contesto di breve periodo.",
+    helpText: "Average market price over the last week. It smooths daily noise and highlights the short-term context.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatPriceParts(summary?.weekly_avg_price_eur_mwh),
   },
   {
     title: "Avg Prod 24h",
-    helpText: "Produzione media aggregata del portfolio nelle ultime 24 ore. Serve per confrontare il ritmo operativo più recente.",
+    helpText: "Average aggregated portfolio production over the last 24 hours. Use it to compare the latest operating pace.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatGwh(summary?.daily_avg_production_gwh),
   },
   {
     title: "Active plants",
-    helpText: "Numero di impianti che hanno prodotto almeno una volta nelle ultime 24 ore.",
+    helpText: "Number of plants that produced at least once during the last 24 hours.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatCount(summary?.active_plants_24h),
   },
   {
     title: "Inactive plants",
-    helpText: "Numero di impianti senza produzione nelle ultime 24 ore. Aiuta a intercettare fermate o indisponibilità.",
+    helpText: "Number of plants with no production during the last 24 hours. It helps spot outages or downtime.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatCount(summary?.inactive_plants_24h),
   },
   {
     title: "Renewables",
-    helpText: "Quota percentuale della produzione portfolio coperta da fonti rinnovabili nelle ultime 24 ore.",
+    helpText: "Share of total portfolio production covered by renewable technologies in the last 24 hours.",
     accessor: (summary: DashboardSummaryResponse | null) =>
       formatPercent(summary?.renewables_share_pct_24h),
   },
@@ -104,7 +104,7 @@ export function PortfolioKpiGrid({
   if (loading) {
     return (
       <div className="kpi-grid-state">
-        <LoadingBattery label="Sto calcolando i KPI portfolio sulle ultime 24h e sull'ultima settimana." />
+        <LoadingBattery label="Calculating the latest portfolio KPIs for the last 24 hours and the last week." />
       </div>
     );
   }
@@ -125,7 +125,7 @@ export function PortfolioKpiGrid({
           <article key={metric.title} className="kpi-tile">
             <div className="kpi-heading">
               <span className="kpi-title">{metric.title}</span>
-              <HelpTooltip label={`Aiuto ${metric.title}`} text={metric.helpText} />
+              <HelpTooltip label={`Help ${metric.title}`} text={metric.helpText} />
             </div>
             <strong className="kpi-value">
               <span>{value.value}</span>

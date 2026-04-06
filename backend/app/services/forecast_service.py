@@ -91,8 +91,11 @@ class ForecastService:
         runs: list[ForecastRunDetailResponse] = []
 
         for signal_type in requested_targets:
-            history_rows = self.repository.get_portfolio_history(
+            scope, target_code = self._resolve_signal_scope(signal_type, request)
+            history_rows = self.repository.get_history(
                 session,
+                scope=scope,
+                target_code=target_code,
                 signal_type=signal_type,
                 granularity=request.granularity,
                 market_session=request.market_session,
@@ -109,6 +112,8 @@ class ForecastService:
 
             run = self.repository.create_run(
                 session,
+                scope=scope,
+                target_code=target_code,
                 signal_type=signal_type,
                 granularity=request.granularity,
                 horizon=request.horizon,
@@ -119,6 +124,8 @@ class ForecastService:
                     "signal_type": signal_type,
                     "requested_model_name": request.model_type,
                     "advanced_settings": request.advanced_settings,
+                    "scope": scope,
+                    "target_code": target_code,
                 },
             )
 
@@ -139,6 +146,8 @@ class ForecastService:
                     "error": str(exc),
                     "requested_model_name": request.model_type,
                     "advanced_settings": request.advanced_settings,
+                    "scope": scope,
+                    "target_code": target_code,
                 }
                 self.repository.fail_run(
                     session,
@@ -160,6 +169,8 @@ class ForecastService:
                 "requested_model_name": request.model_type,
                 "advanced_settings": request.advanced_settings,
                 "processing_ms": result.processing_ms,
+                "scope": scope,
+                "target_code": target_code,
             }
             if result.metadata_json:
                 metadata_json.update(result.metadata_json)
@@ -199,3 +210,23 @@ class ForecastService:
         if target_kind == "volume":
             return ["production"]
         return ["price", "production"]
+
+    def _resolve_signal_scope(
+        self,
+        signal_type: str,
+        request: ForecastExecutionRequest,
+    ) -> tuple[str, str | None]:
+        if signal_type == "price":
+            return "portfolio", None
+
+        if request.production_scope == "zone":
+            if not request.production_target_code:
+                raise HTTPException(status_code=400, detail="production target code is required for zone scope")
+            return "zone", request.production_target_code
+
+        if request.production_scope == "plant":
+            if not request.production_target_code:
+                raise HTTPException(status_code=400, detail="production target code is required for plant scope")
+            return "plant", request.production_target_code
+
+        return "portfolio", None

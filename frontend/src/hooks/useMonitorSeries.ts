@@ -14,20 +14,22 @@ interface UseMonitorSeriesOptions {
   granularity: Granularity;
   range: { startIso: string; endIso: string } | null;
   breakdownBy?: SeriesBreakdown;
+  filters?: Partial<DashboardFiltersState>;
 }
 
 function buildFilters(
   granularity: Granularity,
   range: { startIso: string; endIso: string } | null,
+  filters?: Partial<DashboardFiltersState>,
 ): DashboardFiltersState {
   return {
-    technology: [],
-    marketZone: [],
-    plantCode: "",
-    marketSession: "MGP",
+    technology: filters?.technology ?? [],
+    marketZone: filters?.marketZone ?? [],
+    plantCode: filters?.plantCode ?? "",
+    marketSession: filters?.marketSession ?? "MGP",
     dateFrom: range ? isoToLocalInputValue(range.startIso) : "",
     dateTo: range ? isoToLocalInputValue(range.endIso) : "",
-    forecastRunId: "",
+    forecastRunId: filters?.forecastRunId ?? "",
   };
 }
 
@@ -36,6 +38,7 @@ export function useMonitorSeries({
   granularity,
   range,
   breakdownBy = "none",
+  filters,
 }: UseMonitorSeriesOptions) {
   const [data, setData] = useState<TimeSeriesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,16 +52,16 @@ export function useMonitorSeries({
     }
 
     const controller = new AbortController();
-    const filters = buildFilters(granularity, range);
+    const requestFilters = buildFilters(granularity, range, filters);
 
     setLoading(true);
     setError(null);
 
     const request =
       kind === "price"
-        ? energyApi.getPriceSeries(filters, granularity, breakdownBy, controller.signal)
+        ? energyApi.getPriceSeries(requestFilters, granularity, breakdownBy, controller.signal)
         : energyApi.getProductionSeries(
-            filters,
+            requestFilters,
             granularity,
             breakdownBy,
             controller.signal,
@@ -75,7 +78,7 @@ export function useMonitorSeries({
         setError(
           reason instanceof Error
             ? reason.message
-            : "Impossibile caricare il monitor selezionato.",
+            : "Unable to load the selected monitor.",
         );
       })
       .finally(() => {
@@ -87,7 +90,19 @@ export function useMonitorSeries({
     return () => {
       controller.abort();
     };
-  }, [breakdownBy, granularity, kind, range?.endIso, range?.startIso, version]);
+  }, [
+    breakdownBy,
+    filters?.forecastRunId,
+    filters?.marketSession,
+    filters?.marketZone?.join("|"),
+    filters?.plantCode,
+    filters?.technology?.join("|"),
+    granularity,
+    kind,
+    range?.endIso,
+    range?.startIso,
+    version,
+  ]);
 
   return { data, error, loading, refresh };
 }

@@ -34,8 +34,8 @@ export function DashboardView({
     return (
       <div className="dashboard-grid">
         <LoadingPanel
-          title="Dashboard in caricamento"
-          message="Sto raccogliendo KPI, serie di produzione, prezzi e confronto actual vs forecast."
+          title="Loading dashboard"
+          message="Collecting KPIs, production series, price series, and actual-vs-forecast comparison."
         />
       </div>
     );
@@ -45,9 +45,9 @@ export function DashboardView({
     return (
       <div className="dashboard-grid">
         <ErrorPanel
-          title="Dashboard non disponibile"
+          title="Dashboard unavailable"
           message={error}
-          actionLabel="Riprova"
+          actionLabel="Retry"
           onAction={onRetry}
         />
       </div>
@@ -71,19 +71,19 @@ export function DashboardView({
           seriesKeys={productionSeriesKeys}
           title={
             role === "portfolioManager"
-              ? "Produzione aggregata per tecnologia"
-              : "Produzione filtrata per area di analisi"
+              ? "Production by technology"
+              : "Production filtered by analysis area"
           }
           subtitle={
             role === "portfolioManager"
-              ? "Lettura compatta della curva di produzione del portfolio."
-              : "Breakdown orientato al drill-down, coerente con i filtri attivi."
+              ? "Compact view of the portfolio production curve."
+              : "Drill-down oriented breakdown aligned with the active filters."
           }
         />
       ) : (
         <EmptyPanel
-          title="Produzione non disponibile"
-          message="Nessuna serie di produzione disponibile per i filtri correnti."
+          title="Production unavailable"
+          message="No production series is available for the current filters."
         />
       )}
 
@@ -91,13 +91,13 @@ export function DashboardView({
         <PriceChart
           data={priceData}
           seriesKeys={priceSeriesKeys}
-          title="Prezzi di mercato"
-          subtitle="Serie prezzi coerente con sessione selezionata e perimetro di portfolio."
+          title="Market prices"
+          subtitle="Price series aligned with the selected market session and portfolio scope."
         />
       ) : (
         <EmptyPanel
-          title="Prezzi non disponibili"
-          message="Nessun dato prezzo disponibile per i filtri correnti."
+          title="Prices unavailable"
+          message="No price data is available for the current filters."
         />
       )}
 
@@ -108,28 +108,28 @@ export function DashboardView({
           subtitle={
             comparison?.selected_run
               ? `Run backend #${comparison.selected_run.id} · ${comparison.selected_run.model_name}`
-              : "Serie actual disponibile. Nessun forecast persistito trovato nel backend."
+              : "Actual series available. No persisted forecast was found in the backend."
           }
         />
       ) : (
         <EmptyPanel
-          title="Confronto actual vs forecast"
-          message="Non ci sono punti comparabili da mostrare. Usa Forecast Lab per generare una simulazione forecast on-demand."
+          title="Actual vs forecast comparison"
+          message="There are no comparable points to display. Generate an on-demand forecast to populate this panel."
         />
       )}
 
       <SectionCard
-        eyebrow="Narrativa"
+        eyebrow="Narrative"
         title={
           role === "portfolioManager"
-            ? "Executive readout del portafoglio"
-            : "Analyst notes sui filtri correnti"
+            ? "Executive portfolio readout"
+            : "Analyst notes on current filters"
         }
-        subtitle="Una vista testuale utile anche durante la demo live."
+        subtitle="A compact textual summary that also works well in live demos."
       >
         <div className="insight-grid">
           <div className="insight-card">
-            <span className="insight-label">Energia osservata</span>
+            <span className="insight-label">Observed energy</span>
             <strong>{summary ? summary.total_energy_mwh.toFixed(1) : "--"} MWh</strong>
           </div>
           <div className="insight-card">
@@ -137,11 +137,11 @@ export function DashboardView({
             <strong>{summary?.capture_price_eur_mwh?.toFixed(1) ?? "--"} EUR/MWh</strong>
           </div>
           <div className="insight-card">
-            <span className="insight-label">Run forecast backend</span>
-            <strong>{comparison?.selected_run ? comparison.selected_run.status : "assente"}</strong>
+            <span className="insight-label">Backend forecast run</span>
+            <strong>{comparison?.selected_run ? comparison.selected_run.status : "missing"}</strong>
           </div>
           <div className="insight-card">
-            <span className="insight-label">Ultimo completamento</span>
+            <span className="insight-label">Last completion</span>
             <strong>{formatDateTime(comparison?.selected_run?.completed_at ?? null)}</strong>
           </div>
         </div>

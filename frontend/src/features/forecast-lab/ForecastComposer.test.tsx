@@ -23,7 +23,7 @@ describe("ForecastComposer", () => {
     );
 
     await user.selectOptions(screen.getByLabelText("Model"), "prophet");
-    await user.selectOptions(screen.getByLabelText("Cosa prevedere"), "price");
+    await user.selectOptions(screen.getByLabelText("Forecast target"), "price");
 
     expect(onChange).toHaveBeenNthCalledWith(1, {
       modelType: "prophet",
@@ -53,7 +53,7 @@ describe("ForecastComposer", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Forecast in esecuzione..." }),
+      screen.getByRole("button", { name: "Forecast running..." }),
     ).toBeDisabled();
   });
 });

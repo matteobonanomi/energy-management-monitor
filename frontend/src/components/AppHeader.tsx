@@ -27,7 +27,7 @@ function SegmentedControl<T extends string>({
     <div className={isWide ? "segment-card segment-card-wide" : "segment-card"}>
       <div className="segment-heading">
         <span className="segment-label">{label}</span>
-        <HelpTooltip label={`Aiuto ${label}`} text={helpText} />
+        <HelpTooltip label={`Help ${label}`} text={helpText} />
       </div>
       <div className="segment-control" role="group" aria-label={label}>
         {options.map((option) => (
@@ -86,19 +86,18 @@ export function AppHeader({
   return (
     <header className="hero-shell card">
       <div className="hero-copy">
-        <p className="eyebrow">BETA VERSION 0.1</p>
+        <p className="eyebrow">BETA VERSION 0.3</p>
         <h1>EnergyMonitor</h1>
         <p className="lead">
-          <strong>What&apos;s new:</strong> testa i nuovi modelli previsionali di
-          prezzo e volumi.
+          <strong>What&apos;s new:</strong> test the new price and volume forecasting models.
         </p>
-        {isPending ? <p className="hero-status">Aggiornamento dati in corso…</p> : null}
+        {isPending ? <p className="hero-status">Refreshing data…</p> : null}
       </div>
 
       <div className="hero-controls">
         <SegmentedControl
-          label="Profilo"
-          helpText="Scegli il punto di vista della dashboard. Per ora Data Analyst usa la stessa vista del Portfolio Manager."
+          label="Profile"
+          helpText="Switch the dashboard perspective. Portfolio Manager stays focused on operational monitoring, while Data Analyst unlocks deeper exploratory tools."
           isWide
           options={roleOptions}
           selectedValue={role}
@@ -106,14 +105,14 @@ export function AppHeader({
         />
         <SegmentedControl
           label="Theme"
-          helpText="Cambia il contrasto visivo dell'app. Il tema Light usa una palette chiara con accenti blu."
+          helpText="Change the app contrast and color mood. Light mode keeps a clean white surface with blue accents."
           options={themeOptions}
           selectedValue={theme}
           onChange={onThemeChange}
         />
         <SegmentedControl
           label="Granularity"
-          helpText="Decide il livello di dettaglio delle serie. 15m mostra più dettaglio, 1h una vista più sintetica."
+          helpText="Choose how detailed the time series should be. Use 15m for more resolution and 1h for a smoother overview."
           options={granularityOptions}
           selectedValue={granularity}
           onChange={onGranularityChange}

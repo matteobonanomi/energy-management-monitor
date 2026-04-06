@@ -50,6 +50,10 @@ select {
   --heading-color: #f2f3f7;
   --tooltip-background: rgba(20, 24, 31, 0.96);
   --tooltip-border: rgba(168, 199, 250, 0.34);
+  --modal-background:
+    linear-gradient(180deg, rgba(28, 32, 39, 0.98) 0%, rgba(22, 26, 33, 0.99) 100%);
+  --modal-border: rgba(168, 199, 250, 0.28);
+  --modal-highlight: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="light"] {
@@ -73,6 +77,10 @@ select {
   --heading-color: #102a43;
   --tooltip-background: rgba(245, 250, 255, 0.98);
   --tooltip-border: rgba(66, 133, 244, 0.26);
+  --modal-background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(245, 250, 255, 0.985) 100%);
+  --modal-border: rgba(66, 133, 244, 0.22);
+  --modal-highlight: rgba(255, 255, 255, 0.72);
 }
 
 .page-shell {
@@ -763,7 +771,7 @@ select {
   z-index: 30;
   display: grid;
   place-items: center;
-  background: rgba(9, 12, 18, 0.56);
+  background: rgba(9, 12, 18, 0.5);
   backdrop-filter: blur(8px);
   padding: 20px;
 }
@@ -774,9 +782,12 @@ select {
   max-height: 80vh;
   overflow: auto;
   border-radius: 24px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-base);
-  box-shadow: 0 22px 48px var(--shadow-color);
+  border: 1px solid var(--modal-border);
+  background: var(--modal-background);
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.24),
+    0 0 0 1px var(--modal-highlight) inset;
+  backdrop-filter: blur(10px) saturate(1.08);
   padding: 20px;
 }
 

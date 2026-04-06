@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from time import perf_counter
 
 import httpx
 import structlog
@@ -85,6 +86,7 @@ class ForecastService:
         session: Session,
         request: ForecastExecutionRequest,
     ) -> ForecastExecutionResponse:
+        started_at = perf_counter()
         requested_targets = self._resolve_requested_targets(request.target_kind)
         runs: list[ForecastRunDetailResponse] = []
 
@@ -115,6 +117,8 @@ class ForecastService:
                     "market_session": request.market_session,
                     "history_points": len(history),
                     "signal_type": signal_type,
+                    "requested_model_name": request.model_type,
+                    "advanced_settings": request.advanced_settings,
                 },
             )
 
@@ -125,6 +129,7 @@ class ForecastService:
                     granularity=request.granularity,
                     horizon=request.horizon,
                     history=history,
+                    advanced_settings=request.advanced_settings,
                 )
             except httpx.HTTPError as exc:
                 error_metadata = {
@@ -132,6 +137,8 @@ class ForecastService:
                     "history_points": len(history),
                     "signal_type": signal_type,
                     "error": str(exc),
+                    "requested_model_name": request.model_type,
+                    "advanced_settings": request.advanced_settings,
                 }
                 self.repository.fail_run(
                     session,
@@ -141,7 +148,7 @@ class ForecastService:
                 )
                 session.commit()
                 logger.exception("forecast_execution_failed", run_id=run.id, signal_type=signal_type)
-                raise HTTPException(status_code=502, detail="forecast service request failed") from exc
+                raise HTTPException(status_code=502, detail=f"forecast service request failed: {exc}") from exc
 
             metadata_json = {
                 "market_session": request.market_session,
@@ -150,6 +157,9 @@ class ForecastService:
                 "generated_at": result.generated_at.isoformat(),
                 "first_target_timestamp": result.points[0].timestamp.isoformat() if result.points else None,
                 "last_target_timestamp": result.points[-1].timestamp.isoformat() if result.points else None,
+                "requested_model_name": request.model_type,
+                "advanced_settings": request.advanced_settings,
+                "processing_ms": result.processing_ms,
             }
             if result.metadata_json:
                 metadata_json.update(result.metadata_json)
@@ -179,6 +189,7 @@ class ForecastService:
             granularity=request.granularity,
             horizon=request.horizon,
             model_type=request.model_type,
+            processing_ms=int((perf_counter() - started_at) * 1000),
             runs=runs,
         )
 

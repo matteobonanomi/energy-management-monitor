@@ -41,7 +41,16 @@ def test_forecast_service_lists_and_loads_run_detail() -> None:
 
 
 class FakeForecastClient:
-    def predict(self, *, model_name: str, signal_type: str, granularity: str, horizon: str, history):
+    def predict(
+        self,
+        *,
+        model_name: str,
+        signal_type: str,
+        granularity: str,
+        horizon: str,
+        history,
+        advanced_settings=None,
+    ):
         base_timestamp = history[-1].timestamp + timedelta(hours=1)
         points = [
             ForecastResultPoint(timestamp=base_timestamp + timedelta(hours=index), value=200 + index)
@@ -51,6 +60,7 @@ class FakeForecastClient:
             model_name=model_name,
             fallback_used=False,
             generated_at=datetime(2026, 1, 3, tzinfo=UTC),
+            processing_ms=840,
             points=points,
             metadata_json={"source": "test-double", "signal_type": signal_type},
         )
@@ -74,3 +84,4 @@ def test_forecast_service_runs_and_persists_requested_targets() -> None:
     assert len(response.runs) == 2
     assert {run.signal_type for run in response.runs} == {"price", "production"}
     assert all(run.status == "completed" for run in response.runs)
+    assert response.processing_ms is not None

@@ -11,11 +11,12 @@ router = APIRouter()
 
 
 class ForecastRequest(BaseModel):
-    model_name: Literal["arima", "prophet"] = "arima"
+    model_name: Literal["arima", "prophet", "random_forest", "gradient_boosting"] = "arima"
     signal_type: Literal["production", "price"] = "production"
     granularity: Literal["15m", "1h"] = "1h"
     horizon: Literal["next_24h", "day_ahead"] = "next_24h"
     series: list[InputPoint]
+    advanced_settings: dict | None = None
 
 
 class ForecastPoint(BaseModel):
@@ -28,6 +29,7 @@ class ForecastResponse(BaseModel):
     model_name: str
     fallback_used: bool
     generated_at: str
+    processing_ms: int
     points: list[ForecastPoint]
     metadata_json: dict | None
 
@@ -50,12 +52,14 @@ def predict(request: ForecastRequest) -> ForecastResponse:
         granularity=request.granularity,
         horizon=request.horizon,
         series=request.series,
+        advanced_settings=request.advanced_settings,
     )
     return ForecastResponse(
         status="ok",
         model_name=result.model_name,
         fallback_used=result.fallback_used,
         generated_at=result.generated_at.isoformat(),
+        processing_ms=result.processing_ms,
         points=[
             ForecastPoint(timestamp=point.timestamp.isoformat(), value=point.value)
             for point in result.points

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.shared import TimeSeriesPoint
 
-ForecastModelType = Literal["arima", "prophet"]
+ForecastModelType = Literal["arima", "prophet", "random_forest", "gradient_boosting"]
 ForecastSignalType = Literal["production", "price"]
 ForecastTargetKind = Literal["price", "volume", "both"]
 
@@ -62,6 +62,7 @@ class ForecastExecutionRequest(BaseModel):
     granularity: Literal["15m", "1h"] = "1h"
     market_session: str = "MGP"
     history_points: int | None = Field(default=None, ge=1)
+    advanced_settings: dict | None = None
 
 
 class ForecastExecutionResponse(BaseModel):
@@ -69,4 +70,5 @@ class ForecastExecutionResponse(BaseModel):
     granularity: Literal["15m", "1h"]
     horizon: Literal["next_24h", "day_ahead"]
     model_type: ForecastModelType
+    processing_ms: int | None = None
     runs: list[ForecastRunDetailResponse]

@@ -108,6 +108,7 @@ def test_forecast_run_execution_endpoint_returns_persisted_runs(monkeypatch) -> 
             granularity="1h",
             horizon="next_24h",
             model_type="arima",
+            processing_ms=1450,
             runs=[
                 ForecastRunDetailResponse(
                     id=99,

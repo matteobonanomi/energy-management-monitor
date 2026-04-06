@@ -1,8 +1,9 @@
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { AppHeader } from "../components/AppHeader";
 import { MonitorLineChart, MonitorStackedAreaChart } from "../components/Charts";
 import { ForecastEnginePanel } from "../components/ForecastEnginePanel";
+import { LoadingBattery } from "../components/LoadingBattery";
 import { MonitorPanel } from "../components/MonitorPanel";
 import { PortfolioKpiGrid } from "../components/PortfolioKpiGrid";
 import { SectionCard } from "../components/Panel";
@@ -10,6 +11,7 @@ import { useForecastExecution } from "../hooks/useForecastExecution";
 import { useFiltersData } from "../hooks/useFiltersData";
 import { useMonitorSeries } from "../hooks/useMonitorSeries";
 import { usePortfolioSummary } from "../hooks/usePortfolioSummary";
+import { forecastModelOptionsByRole } from "../lib/forecastModelConfig";
 import { buildMonitorForecastChartData, buildStackedMonitorChartData } from "../lib/charts";
 import { buildRangeIsoBounds } from "../lib/dates";
 import { trackUserAction } from "../lib/userActionTracking";
@@ -43,6 +45,22 @@ export function App() {
   );
   const summaryResource = usePortfolioSummary(portfolioFilters, granularity);
   const forecastExecution = useForecastExecution(granularity);
+
+  useEffect(() => {
+    if (role !== "portfolioManager") {
+      return;
+    }
+
+    const allowedModels = new Set(
+      forecastModelOptionsByRole.portfolioManager.map((option) => option.value),
+    );
+    if (!allowedModels.has(forecastExecution.formState.modelType)) {
+      forecastExecution.setFormState((current) => ({
+        ...current,
+        modelType: "arima",
+      }));
+    }
+  }, [forecastExecution.formState.modelType, forecastExecution.setFormState, role]);
 
   const timeBounds = useMemo(() => {
     if (!filtersResource.data) {
@@ -111,7 +129,7 @@ export function App() {
             : "monitor-inline-state"
         }
       >
-        <p>{message}</p>
+        {tone === "loading" ? <LoadingBattery label={message} /> : <p>{message}</p>}
       </div>
     );
   }
@@ -278,14 +296,22 @@ export function App() {
 
         <SectionCard
           title="Forecast Engine"
-          subtitle="Trigger on-demand su serie portfolio aggregate. Il forecast usa ARIMA o Prophet e si innesta nei grafici superiori."
+          subtitle={
+            role === "portfolioManager"
+              ? "Trigger on-demand su serie portfolio aggregate. Portfolio Manager usa ARIMA e Prophet con validazione automatica."
+              : "Trigger on-demand con modelli statistici e machine learning, metriche di validazione e iperparametri modificabili."
+          }
         >
           <ForecastEnginePanel
+            role={role}
             value={forecastExecution.formState}
+            advancedSettingsByModel={forecastExecution.advancedSettingsByModel}
             response={forecastExecution.response}
             isSubmitting={forecastExecution.isSubmitting}
             error={forecastExecution.error}
+            errorProcessingMs={forecastExecution.errorProcessingMs}
             onChange={forecastExecution.setFormState}
+            onAdvancedSettingsSave={forecastExecution.setAdvancedSettings}
             onSubmit={forecastExecution.runForecast}
           />
         </SectionCard>

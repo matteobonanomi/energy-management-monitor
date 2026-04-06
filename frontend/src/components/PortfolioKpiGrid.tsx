@@ -1,4 +1,5 @@
 import { HelpTooltip } from "./HelpTooltip";
+import { LoadingBattery } from "./LoadingBattery";
 import type { DashboardSummaryResponse } from "../types/api";
 import { formatCompactNumber } from "../lib/format";
 
@@ -103,7 +104,7 @@ export function PortfolioKpiGrid({
   if (loading) {
     return (
       <div className="kpi-grid-state">
-        <p>Sto calcolando i KPI portfolio sulle ultime 24h e sull'ultima settimana.</p>
+        <LoadingBattery label="Sto calcolando i KPI portfolio sulle ultime 24h e sull'ultima settimana." />
       </div>
     );
   }

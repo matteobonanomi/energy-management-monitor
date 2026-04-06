@@ -4,12 +4,17 @@ export type UserRole = "portfolioManager" | "dataAnalyst";
 export type SeriesBreakdown = "none" | "technology" | "market_zone" | "plant_code";
 export type ForecastScope = "plant" | "portfolio" | "technology" | "zone";
 export type ForecastHorizon = "next_24h" | "day_ahead";
-export type ForecastModelType = "arima" | "prophet";
+export type ForecastModelType =
+  | "arima"
+  | "prophet"
+  | "random_forest"
+  | "gradient_boosting";
 export type ForecastSignalType = "production" | "price";
 export type ForecastTargetKind = "price" | "volume" | "both";
 export type TimeWindow = "1w" | "2w" | "1m" | "max";
 export type UserActionOutcome = "changed" | "attempted" | "succeeded" | "failed";
 export type UserActionTrackingStatus = "stored" | "skipped" | "failed";
+export type ForecastAdvancedSettings = Record<string, string | number | boolean | null>;
 
 export interface TechnologyOption {
   code: string;
@@ -147,6 +152,7 @@ export interface ForecastPredictResponse {
   model_name: string;
   fallback_used: boolean;
   generated_at: string;
+  processing_ms: number;
   points: ForecastPoint[];
   metadata_json?: Record<string, unknown> | null;
 }
@@ -157,6 +163,7 @@ export interface ForecastExecutionRequest {
   horizon: ForecastHorizon;
   granularity: Granularity;
   market_session?: string;
+  advanced_settings?: ForecastAdvancedSettings | null;
 }
 
 export interface ForecastExecutionResponse {
@@ -164,6 +171,7 @@ export interface ForecastExecutionResponse {
   granularity: Granularity;
   horizon: ForecastHorizon;
   model_type: ForecastModelType;
+  processing_ms: number | null;
   runs: ForecastRunDetailResponse[];
 }
 

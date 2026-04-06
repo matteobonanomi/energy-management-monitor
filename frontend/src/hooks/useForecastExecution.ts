@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { energyApi } from "../api/client";
+import { buildAllDefaultAdvancedSettings } from "../lib/forecastModelConfig";
 import { trackUserAction } from "../lib/userActionTracking";
 import type {
+  ForecastAdvancedSettings,
   ForecastExecutionResponse,
   ForecastFormState,
   ForecastRunDetailResponse,
+  ForecastModelType,
   Granularity,
 } from "../types/api";
 
@@ -19,11 +22,16 @@ export function useForecastExecution(granularity: Granularity) {
   const [formState, setFormState] = useState<ForecastFormState>(initialFormState);
   const [response, setResponse] = useState<ForecastExecutionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorProcessingMs, setErrorProcessingMs] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [advancedSettingsByModel, setAdvancedSettingsByModel] = useState(
+    buildAllDefaultAdvancedSettings(),
+  );
 
   useEffect(() => {
     setResponse(null);
     setError(null);
+    setErrorProcessingMs(null);
   }, [granularity]);
 
   const runsBySignal = useMemo(() => {
@@ -34,9 +42,24 @@ export function useForecastExecution(granularity: Granularity) {
     return bySignal;
   }, [response]);
 
-  async function runForecast() {
+  function setAdvancedSettings(
+    modelType: ForecastModelType,
+    nextSettings: ForecastAdvancedSettings,
+  ) {
+    setAdvancedSettingsByModel((current) => ({
+      ...current,
+      [modelType]: nextSettings,
+    }));
+  }
+
+  async function runForecast(overrideSettings?: ForecastAdvancedSettings) {
+    const startedAt = performance.now();
     setIsSubmitting(true);
     setError(null);
+    setErrorProcessingMs(null);
+
+    const activeAdvancedSettings =
+      overrideSettings ?? advancedSettingsByModel[formState.modelType];
 
     try {
       void trackUserAction({
@@ -48,6 +71,7 @@ export function useForecastExecution(granularity: Granularity) {
           model_type: formState.modelType,
           target_kind: formState.targetKind,
           horizon: formState.horizon,
+          advanced_settings_keys: Object.keys(activeAdvancedSettings ?? {}),
         },
       });
       const nextResponse = await energyApi.runForecast({
@@ -56,6 +80,7 @@ export function useForecastExecution(granularity: Granularity) {
         horizon: formState.horizon,
         granularity,
         market_session: "MGP",
+        advanced_settings: activeAdvancedSettings,
       });
       setResponse(nextResponse);
       void trackUserAction({
@@ -70,6 +95,7 @@ export function useForecastExecution(granularity: Granularity) {
         },
       });
     } catch (reason) {
+      setErrorProcessingMs(Math.round(performance.now() - startedAt));
       setError(
         reason instanceof Error
           ? reason.message
@@ -100,9 +126,12 @@ export function useForecastExecution(granularity: Granularity) {
   return {
     formState,
     setFormState,
+    advancedSettingsByModel,
+    setAdvancedSettings,
     response,
     runsBySignal,
     error,
+    errorProcessingMs,
     isSubmitting,
     runForecast,
   };

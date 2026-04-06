@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 import httpx
 import structlog
@@ -23,6 +24,7 @@ class ForecastClientResult:
     model_name: str
     fallback_used: bool
     generated_at: datetime
+    processing_ms: int
     points: list[ForecastResultPoint]
     metadata_json: dict | None
 
@@ -41,12 +43,14 @@ class ForecastClient:
         granularity: str,
         horizon: str,
         history: list[TimeSeriesPoint],
+        advanced_settings: dict[str, Any] | None = None,
     ) -> ForecastClientResult:
         payload = {
             "model_name": model_name,
             "signal_type": signal_type,
             "granularity": granularity,
             "horizon": horizon,
+            "advanced_settings": advanced_settings,
             "series": [
                 {
                     "timestamp": point.timestamp.isoformat(),
@@ -65,7 +69,16 @@ class ForecastClient:
         )
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.post(f"{self.base_url}/forecast/v1/predict", json=payload)
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                response_body = exc.response.text.strip()
+                detail = response_body or str(exc)
+                raise httpx.HTTPStatusError(
+                    f"forecast service error: {detail}",
+                    request=exc.request,
+                    response=exc.response,
+                ) from exc
 
         data = response.json()
         logger.info(
@@ -74,11 +87,13 @@ class ForecastClient:
             model_name=data["model_name"],
             points=len(data["points"]),
             fallback_used=data["fallback_used"],
+            processing_ms=data.get("processing_ms"),
         )
         return ForecastClientResult(
             model_name=data["model_name"],
             fallback_used=bool(data["fallback_used"]),
             generated_at=datetime.fromisoformat(data["generated_at"]),
+            processing_ms=int(data.get("processing_ms") or 0),
             points=[
                 ForecastResultPoint(
                     timestamp=datetime.fromisoformat(point["timestamp"]),

@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 import {
   hyperparametersByModel,
@@ -92,7 +93,7 @@ export function AdvancedSettingsModal({
     }
   }
 
-  return (
+  const modalContent = (
     <div className="advanced-modal-backdrop" onClick={handleBackdropClick}>
       <div
         className="advanced-modal-card"
@@ -142,4 +143,6 @@ export function AdvancedSettingsModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

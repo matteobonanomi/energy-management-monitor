@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 import { analystKpiCatalog, type AnalystKpiDefinition } from "../lib/analystKpis";
 import { HelpTooltip } from "./HelpTooltip";
@@ -30,7 +31,7 @@ export function AnalystKpiPickerModal({
     }
   }
 
-  return (
+  const modalContent = (
     <div className="advanced-modal-backdrop" onClick={handleBackdropClick}>
       <div
         className="advanced-modal-card analyst-kpi-modal"
@@ -85,4 +86,6 @@ export function AnalystKpiPickerModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

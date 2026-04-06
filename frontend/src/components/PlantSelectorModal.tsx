@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 import type { FilterPlantOption } from "../types/api";
 
@@ -31,7 +32,7 @@ export function PlantSelectorModal({
     }
   }
 
-  return (
+  const modalContent = (
     <div className="advanced-modal-backdrop" onClick={handleBackdropClick}>
       <div
         className="advanced-modal-card plant-selector-modal"
@@ -79,4 +80,6 @@ export function PlantSelectorModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

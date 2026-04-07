@@ -1,3 +1,9 @@
+"""Shared query helpers for repository modules.
+
+The helpers in this module keep cross-cutting SQL behavior consistent so
+different repositories do not silently diverge on time bucketing or filters.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -10,6 +16,7 @@ from app.schemas.dashboard import DashboardQueryFilters
 
 
 def normalize_timestamp(value: datetime | str) -> datetime:
+    """Normalize timestamps to UTC before they cross repository boundaries."""
     if isinstance(value, datetime):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
@@ -27,6 +34,7 @@ def build_time_bucket(
     granularity: str,
     dialect_name: str,
 ) -> ColumnElement:
+    """Abstract backend-specific time bucketing so services remain storage-agnostic."""
     if granularity == "15m":
         return column.label("bucket")
     if dialect_name == "sqlite":
@@ -38,6 +46,7 @@ def apply_production_filters(
     stmt: Select,
     filters: DashboardQueryFilters,
 ) -> Select:
+    """Apply production-side filters in one place to avoid query drift."""
     if filters.technology:
         stmt = stmt.where(Plant.technology.in_(filters.technology))
     if filters.plant_code:
@@ -55,6 +64,7 @@ def apply_price_filters(
     stmt: Select,
     filters: DashboardQueryFilters,
 ) -> Select:
+    """Apply price-side filters centrally so dashboard metrics stay internally coherent."""
     stmt = stmt.where(MarketPrice.market_session == filters.market_session)
     if filters.market_zone:
         stmt = stmt.where(MarketPrice.market_zone.in_(filters.market_zone))

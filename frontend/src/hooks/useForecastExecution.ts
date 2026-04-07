@@ -19,6 +19,10 @@ const initialFormState: ForecastFormState = {
   horizon: "next_24h",
 };
 
+/**
+ * Owns forecast form and run state so execution feedback, advanced settings,
+ * and triggered overlays stay aligned after each request.
+ */
 export function useForecastExecution(granularity: Granularity) {
   const [formState, setFormState] = useState<ForecastFormState>(initialFormState);
   const [response, setResponse] = useState<ForecastExecutionResponse | null>(null);

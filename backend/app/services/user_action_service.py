@@ -1,3 +1,9 @@
+"""Service layer for resilient user action tracking.
+
+Telemetry should never block the main demo flows, so this service treats
+tracking as best-effort while preserving enough context for later analysis.
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -15,6 +21,8 @@ logger = structlog.get_logger(__name__)
 
 
 class UserActionService:
+    """Enrich and persist user action events with a non-blocking policy."""
+
     def __init__(self, repository: UserActionRepository) -> None:
         self._repository = repository
 
@@ -27,6 +35,7 @@ class UserActionService:
         client_host: str | None,
         user_agent: str | None,
     ) -> UserActionTrackingResponse:
+        """Store tracking events when possible and degrade safely when persistence is unavailable."""
         accepted_count = len(payload.events)
         documents = [
             {

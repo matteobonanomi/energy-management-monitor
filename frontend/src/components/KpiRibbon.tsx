@@ -24,6 +24,10 @@ function KpiCard({ label, value, hint, accent }: KpiCardProps) {
   );
 }
 
+/**
+ * Packages a concise KPI strip for contexts that need a quick read before the
+ * user drops into heavier charts or custom analyst tiles.
+ */
 export function KpiRibbon({ summary, role }: KpiRibbonProps) {
   const strategistHint =
     role === "portfolioManager"

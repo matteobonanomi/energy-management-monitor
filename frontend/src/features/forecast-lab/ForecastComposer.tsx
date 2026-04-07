@@ -8,6 +8,10 @@ interface ForecastComposerProps {
   onSubmit: () => void;
 }
 
+/**
+ * Keeps the legacy forecast form minimal so compatibility screens can still
+ * launch forecasts without carrying the full dashboard orchestration UI.
+ */
 export function ForecastComposer({
   granularity,
   value,

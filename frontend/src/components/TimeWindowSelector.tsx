@@ -8,6 +8,10 @@ interface TimeWindowSelectorProps {
   onChange: (value: TimeWindow) => void;
 }
 
+/**
+ * Normalizes historical-depth switching so every monitor panel exposes the
+ * same exploration cadence with minimal repeated wiring.
+ */
 export function TimeWindowSelector({
   value,
   onChange,

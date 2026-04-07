@@ -107,6 +107,10 @@ const technologyPalette: Record<string, string> = {
   gas: "#f97316",
 };
 
+/**
+ * Favors stacked production reading so technology contribution remains legible
+ * before the user drills into forecast overlays or analyst views.
+ */
 export function ProductionChart({
   data,
   seriesKeys,
@@ -175,6 +179,10 @@ export function ProductionChart({
   );
 }
 
+/**
+ * Reuses the simple line treatment to keep market-price panels comparable to
+ * other monitor charts without introducing another visual grammar.
+ */
 export function PriceChart({
   data,
   seriesKeys,
@@ -193,6 +201,10 @@ export function PriceChart({
   );
 }
 
+/**
+ * Provides a lightweight monitor chart wrapper for panels that compare actual
+ * and forecast values on the same signal.
+ */
 export function MonitorLineChart({
   data,
   seriesKeys,
@@ -214,6 +226,10 @@ export function MonitorLineChart({
   );
 }
 
+/**
+ * Preserves technology layering while allowing a total forecast overlay, which
+ * makes production composition and forward view readable at once.
+ */
 export function MonitorStackedAreaChart({
   data,
   areaSeriesKeys,
@@ -294,6 +310,10 @@ export function MonitorStackedAreaChart({
   );
 }
 
+/**
+ * Couples production and price on one canvas when analyst workflows need to
+ * inspect co-movement instead of two disconnected charts.
+ */
 export function DualAxisProductionPriceChart({
   data,
   productionSeriesKeys,
@@ -396,6 +416,10 @@ export function DualAxisProductionPriceChart({
   );
 }
 
+/**
+ * Gives the backend comparison payload a dedicated visual contract so actual
+ * and forecast stay unmistakably different in demos and debugging.
+ */
 export function ActualForecastChart({
   data,
   title,

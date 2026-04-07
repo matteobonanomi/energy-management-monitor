@@ -1,3 +1,10 @@
+"""Application bootstrap for the FastAPI backend.
+
+This module keeps app wiring in one place so runtime concerns such as
+logging, middleware, CORS, and route registration stay consistent across
+local runs and tests.
+"""
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    """Emit lifecycle events from a single hook for consistent observability."""
     settings = get_settings()
     logger.info(
         "application_starting",
@@ -26,6 +34,7 @@ async def lifespan(_app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    """Build the FastAPI application with shared runtime configuration."""
     settings = get_settings()
     configure_logging(settings.log_level)
     app = FastAPI(

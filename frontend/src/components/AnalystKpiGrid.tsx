@@ -31,6 +31,10 @@ type AnalystKpiSlotState =
 
 const EMPTY_SLOTS = Array<string | null>(6).fill(null);
 
+/**
+ * Trades a fixed KPI layout for configurable slots so analyst workflows can
+ * assemble a temporary metric board without changing dashboard structure.
+ */
 export function AnalystKpiGrid({
   maxTimestamp,
   granularity,

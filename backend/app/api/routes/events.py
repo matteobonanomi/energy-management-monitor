@@ -1,3 +1,9 @@
+"""Endpoints for non-blocking user action tracking.
+
+Tracking is isolated from the rest of the API surface so telemetry concerns
+can fail independently without affecting dashboard and forecast flows.
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Request
@@ -15,6 +21,7 @@ def track_user_actions(
     request: Request,
     tracker: UserActionTracker,
 ) -> UserActionTrackingResponse:
+    """Enrich client events with request context before handing them to the tracker."""
     context = get_contextvars()
     return tracker.track_events(
         payload,

@@ -9,6 +9,10 @@ interface AnalystKpiPickerModalProps {
   onSelect: (definition: AnalystKpiDefinition) => void;
 }
 
+/**
+ * Separates KPI selection from the grid itself so exploratory configuration
+ * does not overload the main analytical surface.
+ */
 export function AnalystKpiPickerModal({
   onClose,
   onSelect,

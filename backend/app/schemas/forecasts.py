@@ -1,3 +1,9 @@
+"""Schemas for forecast execution and inspection.
+
+These contracts separate backend orchestration concerns from the forecast
+microservice transport while keeping the UI-facing API stable.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,6 +20,8 @@ ForecastProductionScope = Literal["portfolio", "zone", "plant"]
 
 
 class ForecastRunListFilters(BaseModel):
+    """Collect forecast run list filters so querying remains explicit and testable."""
+
     scope: str | None = None
     status: str | None = None
     signal_type: ForecastSignalType | None = None
@@ -22,6 +30,8 @@ class ForecastRunListFilters(BaseModel):
 
 
 class ForecastRunSummary(BaseModel):
+    """Expose compact run metadata for list views and recent-history panels."""
+
     id: int
     scope: str
     target_code: str | None
@@ -37,10 +47,14 @@ class ForecastRunSummary(BaseModel):
 
 
 class ForecastRunsResponse(BaseModel):
+    """Wrap forecast run lists in a stable top-level response contract."""
+
     items: list[ForecastRunSummary]
 
 
 class ForecastRunDetailResponse(BaseModel):
+    """Expose one persisted forecast run with enough detail for inspection and overlays."""
+
     id: int
     scope: str
     target_code: str | None
@@ -57,6 +71,8 @@ class ForecastRunDetailResponse(BaseModel):
 
 
 class ForecastExecutionRequest(BaseModel):
+    """Capture forecast intent in one payload before orchestration begins."""
+
     model_type: ForecastModelType
     target_kind: ForecastTargetKind
     horizon: Literal["next_24h", "day_ahead"] = "next_24h"
@@ -69,6 +85,8 @@ class ForecastExecutionRequest(BaseModel):
 
 
 class ForecastExecutionResponse(BaseModel):
+    """Return execution metadata together with the created forecast runs."""
+
     requested_targets: list[ForecastSignalType]
     granularity: Literal["15m", "1h"]
     horizon: Literal["next_24h", "day_ahead"]

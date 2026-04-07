@@ -1,3 +1,9 @@
+"""ORM models for the operational backend domain.
+
+These models encode the persistence rules that keep demo data plausible and
+make invalid states harder to store accidentally during local development.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -19,10 +25,13 @@ FORECAST_STATUSES = ("queued", "running", "completed", "failed")
 
 
 def _in_clause(values: tuple[str, ...]) -> str:
+    """Generate compact constraint clauses from shared enumerations."""
     return ", ".join(f"'{value}'" for value in values)
 
 
 class Plant(Base):
+    """Persist plant master data separately from time-series measurements."""
+
     __tablename__ = "plants"
     __table_args__ = (
         CheckConstraint(f"technology IN ({_in_clause(TECHNOLOGIES)})", name="technology_allowed"),
@@ -50,6 +59,8 @@ class Plant(Base):
 
 
 class ProductionMeasurement(Base):
+    """Store quarter-hour production actuals as the source of truth."""
+
     __tablename__ = "production_measurements"
     __table_args__ = (
         UniqueConstraint("plant_code", "measured_at"),
@@ -76,6 +87,8 @@ class ProductionMeasurement(Base):
 
 
 class MarketPrice(Base):
+    """Store market prices independently so analytics can join by need, not by storage design."""
+
     __tablename__ = "market_prices"
     __table_args__ = (
         UniqueConstraint("market_zone", "market_session", "price_at"),
@@ -97,6 +110,8 @@ class MarketPrice(Base):
 
 
 class ForecastRun(Base):
+    """Track forecast executions so the UI can inspect provenance and fallback behavior."""
+
     __tablename__ = "forecast_runs"
     __table_args__ = (
         CheckConstraint(f"scope IN ({_in_clause(FORECAST_SCOPES)})", name="scope_allowed"),
@@ -130,6 +145,8 @@ class ForecastRun(Base):
 
 
 class ForecastValue(Base):
+    """Persist forecast output points separately from run metadata for efficient retrieval."""
+
     __tablename__ = "forecast_values"
     __table_args__ = (
         UniqueConstraint("forecast_run_id", "target_timestamp"),

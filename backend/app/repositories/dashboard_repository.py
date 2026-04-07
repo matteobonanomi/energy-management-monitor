@@ -1,3 +1,9 @@
+"""Read-oriented queries that power dashboard views.
+
+This repository concentrates analytical SQL so service code can reason in
+domain terms instead of carrying query mechanics around.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,6 +19,8 @@ from app.schemas.dashboard import ActualForecastQueryFilters, DashboardQueryFilt
 
 @dataclass(slots=True)
 class SummaryMetrics:
+    """Keep summary metric transport explicit between repository and service layers."""
+
     total_energy_mwh: float
     average_price_eur_mwh: float | None
     active_plants: int
@@ -27,6 +35,8 @@ class SummaryMetrics:
 
 @dataclass(slots=True)
 class SeriesRow:
+    """Represent one aggregated point before it is shaped for API responses."""
+
     bucket: datetime | str
     series_key: str
     value: float
@@ -34,6 +44,8 @@ class SeriesRow:
 
 @dataclass(slots=True)
 class ForecastRunSnapshot:
+    """Expose only the forecast run fields needed by dashboard comparisons."""
+
     id: int
     scope: str
     target_code: str | None
@@ -49,7 +61,10 @@ class ForecastRunSnapshot:
 
 
 class DashboardRepository:
+    """Own the SQL needed for dashboard aggregations and forecast overlays."""
+
     def get_summary_metrics(self, session: Session, filters: DashboardQueryFilters) -> SummaryMetrics:
+        """Compute summary metrics together so the dashboard sees one coherent slice."""
         summary_stmt = (
             select(
                 func.coalesce(func.sum(ProductionMeasurement.energy_mwh), 0),
@@ -189,6 +204,7 @@ class DashboardRepository:
         )
 
     def get_production_series(self, session: Session, filters: DashboardQueryFilters) -> list[SeriesRow]:
+        """Aggregate production at query time so hourly data stays derived, not stored."""
         dialect_name = session.get_bind().dialect.name
         bucket = build_time_bucket(ProductionMeasurement.measured_at, filters.granularity, dialect_name)
         series_column = self._resolve_production_breakdown(filters.breakdown_by)
@@ -204,6 +220,7 @@ class DashboardRepository:
         return [SeriesRow(bucket=row.bucket, series_key=row.series_key, value=float(row.value)) for row in session.execute(stmt)]
 
     def get_price_series(self, session: Session, filters: DashboardQueryFilters) -> list[SeriesRow]:
+        """Aggregate price data with the same filter semantics used by summary metrics."""
         dialect_name = session.get_bind().dialect.name
         bucket = build_time_bucket(MarketPrice.price_at, filters.granularity, dialect_name)
         filtered_zone_stmt = select(distinct(Plant.market_zone)).join(
@@ -228,6 +245,7 @@ class DashboardRepository:
         session: Session,
         filters: ActualForecastQueryFilters,
     ) -> ForecastRunSnapshot | None:
+        """Choose the most relevant completed run for an actual-vs-forecast view."""
         if filters.forecast_run_id is not None:
             run = session.get(ForecastRun, filters.forecast_run_id)
             return self._to_run_snapshot(run) if run else None
@@ -251,6 +269,7 @@ class DashboardRepository:
         return self._to_run_snapshot(run) if run else None
 
     def get_forecast_series(self, session: Session, run: ForecastRunSnapshot, granularity: str) -> list[SeriesRow]:
+        """Aggregate persisted forecast values to mirror actual-series shape."""
         dialect_name = session.get_bind().dialect.name
         bucket = build_time_bucket(ForecastValue.target_timestamp, granularity, dialect_name)
 
@@ -270,6 +289,7 @@ class DashboardRepository:
         filters: ActualForecastQueryFilters,
         run: ForecastRunSnapshot | None,
     ) -> list[SeriesRow]:
+        """Anchor actual history around the chosen run so comparisons stay interpretable."""
         metadata_first_target = None
         if run and run.metadata_json:
             metadata_first_target = run.metadata_json.get("first_target_timestamp")

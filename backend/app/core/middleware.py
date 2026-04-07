@@ -1,3 +1,10 @@
+"""HTTP middleware for request-scoped logging context.
+
+This middleware binds request metadata once so log lines from routers,
+services, and repositories can be correlated without passing tracing data
+through every function call.
+"""
+
 from __future__ import annotations
 
 import time
@@ -12,6 +19,8 @@ logger = structlog.get_logger(__name__)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
+    """Attach request metadata to logs and surface the request id to clients."""
+
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
         start = time.perf_counter()

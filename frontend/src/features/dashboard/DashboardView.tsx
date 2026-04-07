@@ -20,6 +20,10 @@ interface DashboardViewProps {
   onRetry: () => void;
 }
 
+/**
+ * Composes a backend-driven dashboard view so loading, error, and comparison
+ * states can be demonstrated independently from the app shell.
+ */
 export function DashboardView({
   role,
   loading,

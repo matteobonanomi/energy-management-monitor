@@ -34,6 +34,10 @@ function resolveBreakdowns(
   };
 }
 
+/**
+ * Keeps the multi-request dashboard read model synchronized so summary, charts,
+ * and comparison panels move together under one loading boundary.
+ */
 export function useDashboardData(
   filters: DashboardFiltersState,
   granularity: Granularity,

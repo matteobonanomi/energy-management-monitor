@@ -1,3 +1,9 @@
+"""Schemas for dashboard requests and responses.
+
+These models keep analytical endpoints aligned on one vocabulary for filters,
+breakdowns, and actual-vs-forecast overlays.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -11,6 +17,8 @@ SeriesBreakdown = Literal["none", "technology", "market_zone", "plant_code"]
 
 
 class DashboardQueryFilters(BaseModel):
+    """Collect dashboard filters in one validated object shared across layers."""
+
     technology: list[str] = Field(default_factory=list)
     plant_code: list[str] = Field(default_factory=list)
     market_zone: list[str] = Field(default_factory=list)
@@ -22,12 +30,15 @@ class DashboardQueryFilters(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self) -> "DashboardQueryFilters":
+        """Reject inverted ranges early so downstream queries do not guess intent."""
         if self.date_from and self.date_to and self.date_from > self.date_to:
             raise ValueError("date_from must be earlier than or equal to date_to")
         return self
 
 
 class DashboardSummaryResponse(BaseModel):
+    """Describe the KPI block shown in the dashboard overview."""
+
     total_energy_mwh: float
     average_price_eur_mwh: float | None
     active_plants: int
@@ -42,12 +53,16 @@ class DashboardSummaryResponse(BaseModel):
 
 
 class TimeSeriesResponse(BaseModel):
+    """Provide a normalized chart payload for price and production series."""
+
     granularity: Literal["15m", "1h"]
     breakdown_by: SeriesBreakdown
     series: list[NamedSeries]
 
 
 class ForecastRunReference(BaseModel):
+    """Expose only the run metadata needed to explain a selected forecast overlay."""
+
     id: int
     scope: str
     target_code: str | None
@@ -59,16 +74,22 @@ class ForecastRunReference(BaseModel):
 
 
 class ComparisonPoint(BaseModel):
+    """Align actual and forecast values on a shared timestamp for side-by-side use."""
+
     timestamp: datetime
     actual_mwh: float | None = None
     forecast_mwh: float | None = None
 
 
 class ActualForecastQueryFilters(DashboardQueryFilters):
+    """Extend dashboard filters with explicit run selection for comparison views."""
+
     forecast_run_id: int | None = None
 
 
 class ActualVsForecastResponse(BaseModel):
+    """Return both raw series and merged comparison points for overlay charts."""
+
     granularity: Literal["15m", "1h"]
     actual_points: list[TimeSeriesPoint]
     forecast_points: list[TimeSeriesPoint]

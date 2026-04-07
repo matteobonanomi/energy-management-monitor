@@ -1,3 +1,9 @@
+"""Declarative base and naming conventions for ORM models.
+
+Stable naming matters here because migrations and tests both benefit when
+constraints have deterministic identifiers across engines.
+"""
+
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
@@ -12,4 +18,6 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
+    """Share metadata conventions across every ORM model in the backend."""
+
     metadata = MetaData(naming_convention=NAMING_CONVENTION)

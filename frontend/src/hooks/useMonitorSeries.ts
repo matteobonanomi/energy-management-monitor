@@ -33,6 +33,10 @@ function buildFilters(
   };
 }
 
+/**
+ * Encapsulates monitor fetching so time-windowed price and production panels
+ * share the same cancellation, loading, and error behavior.
+ */
 export function useMonitorSeries({
   kind,
   granularity,

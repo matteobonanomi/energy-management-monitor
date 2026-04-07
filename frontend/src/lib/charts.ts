@@ -12,6 +12,10 @@ export type ChartDatum = {
   [key: string]: number | string | null;
 };
 
+/**
+ * Flattens backend series into chart rows so presentational components can
+ * focus on visual grammar instead of timestamp reconciliation.
+ */
 export function mergeNamedSeries(series: NamedSeries[]): ChartDatum[] {
   const rows = new Map<string, ChartDatum>();
 
@@ -29,6 +33,10 @@ export function mergeNamedSeries(series: NamedSeries[]): ChartDatum[] {
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+/**
+ * Aligns actual-vs-forecast comparison points into one chart contract tailored
+ * to the dedicated comparison panel.
+ */
 export function buildComparisonChartData(
   comparisonPoints: ComparisonPoint[],
 ): ChartDatum[] {
@@ -42,6 +50,9 @@ export function buildComparisonChartData(
     .sort(sortByTimestamp);
 }
 
+/**
+ * Creates a predictable chart shape for simple single-signal views and tests.
+ */
 export function buildSingleSeriesChartData(
   points: TimeSeriesPoint[],
   key: string,
@@ -55,6 +66,10 @@ export function buildSingleSeriesChartData(
     .sort(sortByTimestamp);
 }
 
+/**
+ * Merges historical and forecast points so triggered runs can be overlaid
+ * without teaching chart components about backend response nuances.
+ */
 export function buildTriggeredForecastChartData(
   actualPoints: TimeSeriesPoint[],
   forecastPoints: ForecastPoint[],
@@ -84,6 +99,10 @@ export function buildTriggeredForecastChartData(
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+/**
+ * Keeps monitor overlays explicit by giving actual and forecast separate keys
+ * on the same timestamp axis.
+ */
 export function buildMonitorForecastChartData(
   actualPoints: TimeSeriesPoint[],
   forecastPoints: ForecastPoint[],
@@ -113,6 +132,10 @@ export function buildMonitorForecastChartData(
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+/**
+ * Preserves stacked production breakdowns while reserving a dedicated channel
+ * for total forecast output on top of the composition view.
+ */
 export function buildStackedMonitorChartData(
   actualSeries: NamedSeries[],
   forecastPoints: ForecastPoint[],
@@ -144,6 +167,10 @@ export function buildStackedMonitorChartData(
   return [...rows.values()].sort(sortByTimestamp);
 }
 
+/**
+ * Builds the combined analyst dataset so production composition and market
+ * price can be inspected together without extra chart-specific glue code.
+ */
 export function buildDualAxisChartData(
   productionSeries: NamedSeries[],
   priceActualPoints: TimeSeriesPoint[],

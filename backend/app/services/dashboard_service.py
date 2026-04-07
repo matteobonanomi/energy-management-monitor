@@ -1,3 +1,9 @@
+"""Service layer for dashboard-oriented read models.
+
+The dashboard needs response shaping beyond raw SQL rows, so this service
+translates repository output into API contracts while keeping routers thin.
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -23,10 +29,13 @@ logger = structlog.get_logger(__name__)
 
 
 class DashboardService:
+    """Shape dashboard data into frontend-friendly response models."""
+
     def __init__(self, repository: DashboardRepository | None = None) -> None:
         self.repository = repository or DashboardRepository()
 
     def get_summary(self, session: Session, filters: DashboardQueryFilters) -> DashboardSummaryResponse:
+        """Round and package summary metrics so the UI gets presentation-ready values."""
         metrics = self.repository.get_summary_metrics(session, filters)
         logger.info(
             "dashboard_summary_loaded",
@@ -54,10 +63,12 @@ class DashboardService:
         )
 
     def get_production_series(self, session: Session, filters: DashboardQueryFilters) -> TimeSeriesResponse:
+        """Translate aggregated production rows into named time series for charts."""
         rows = self.repository.get_production_series(session, filters)
         return self._build_series_response(filters.granularity, filters.breakdown_by, rows)
 
     def get_price_series(self, session: Session, filters: DashboardQueryFilters) -> TimeSeriesResponse:
+        """Translate aggregated price rows into the same chart contract used elsewhere."""
         rows = self.repository.get_price_series(session, filters)
         return self._build_series_response(filters.granularity, filters.breakdown_by, rows)
 
@@ -66,6 +77,7 @@ class DashboardService:
         session: Session,
         filters: ActualForecastQueryFilters,
     ) -> ActualVsForecastResponse:
+        """Align actuals and forecasts on a shared timeline for overlay visualizations."""
         run = self.repository.get_latest_matching_run(session, filters)
         actual_rows = self.repository.get_actual_series_for_forecast(session, filters, run)
         forecast_rows = self.repository.get_forecast_series(session, run, filters.granularity) if run else []

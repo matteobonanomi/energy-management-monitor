@@ -3,6 +3,10 @@ import { useEffect, useReducer, useState } from "react";
 import { energyApi } from "../api/client";
 import type { DashboardFiltersState, DashboardSummaryResponse, Granularity } from "../types/api";
 
+/**
+ * Fetches the compact KPI snapshot separately so the portfolio block can stay
+ * responsive even when other dashboard panels evolve independently.
+ */
 export function usePortfolioSummary(
   filters: DashboardFiltersState,
   granularity: Granularity,

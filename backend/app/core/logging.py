@@ -1,3 +1,9 @@
+"""Structured logging setup for the backend runtime.
+
+Logging is configured centrally so every layer emits the same JSON-friendly
+shape, which keeps local debugging and container logs easier to correlate.
+"""
+
 import logging
 import sys
 
@@ -5,6 +11,7 @@ import structlog
 
 
 def configure_logging(log_level: str) -> None:
+    """Apply one logging policy early so downstream modules do not diverge."""
     timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
 
     structlog.configure(

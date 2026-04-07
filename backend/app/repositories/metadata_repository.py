@@ -1,3 +1,9 @@
+"""Queries that expose UI bootstrap metadata.
+
+The metadata endpoints depend on a compact contract, so repository logic is
+kept separate from dashboard analytics to stay fast and predictable.
+"""
+
 from __future__ import annotations
 
 from sqlalchemy import func, select
@@ -9,7 +15,10 @@ from app.schemas.shared import TechnologyOption
 
 
 class MetadataRepository:
+    """Load filter metadata from canonical SQL sources."""
+
     def get_filters(self, session: Session) -> FiltersResponse:
+        """Build filter options centrally so the frontend boots from one authoritative view."""
         plant_rows = session.execute(
             select(
                 Plant.code,

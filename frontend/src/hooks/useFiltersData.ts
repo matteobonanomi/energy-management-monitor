@@ -3,6 +3,10 @@ import { useEffect, useReducer, useState } from "react";
 import { energyApi } from "../api/client";
 import type { FiltersResponse } from "../types/api";
 
+/**
+ * Loads filter metadata once and exposes refresh semantics so the app shell
+ * can bootstrap around backend-supported values instead of hardcoded guesses.
+ */
 export function useFiltersData() {
   const [data, setData] = useState<FiltersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);

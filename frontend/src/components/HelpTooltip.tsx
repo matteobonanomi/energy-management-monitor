@@ -3,6 +3,10 @@ interface HelpTooltipProps {
   text: string;
 }
 
+/**
+ * Gives dense controls lightweight inline guidance, which matters in a
+ * financial-style UI where labels stay intentionally compact.
+ */
 export function HelpTooltip({ label, text }: HelpTooltipProps) {
   return (
     <span className="help-tooltip">

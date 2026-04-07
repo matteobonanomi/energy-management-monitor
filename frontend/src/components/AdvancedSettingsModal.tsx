@@ -79,6 +79,10 @@ function renderField(
   );
 }
 
+/**
+ * Isolates expert-level hyperparameter editing so advanced tuning stays
+ * available to analysts without crowding the default forecast flow.
+ */
 export function AdvancedSettingsModal({
   modelType,
   values,

@@ -2,6 +2,10 @@ interface LoadingBatteryProps {
   label: string;
 }
 
+/**
+ * Uses a branded loading pattern so transient waits feel intentional instead
+ * of leaving analytical panels visually empty.
+ */
 export function LoadingBattery({ label }: LoadingBatteryProps) {
   return (
     <div className="loading-battery" aria-live="polite" role="status">

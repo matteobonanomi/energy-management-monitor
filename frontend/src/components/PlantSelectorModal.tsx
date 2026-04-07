@@ -9,6 +9,10 @@ interface PlantSelectorModalProps {
   onSelect: (plant: FilterPlantOption) => void;
 }
 
+/**
+ * Keeps plant lookup out of the main analyst control strip so single-asset
+ * focus remains available without making the chart header noisy.
+ */
 export function PlantSelectorModal({
   plants,
   onClose,

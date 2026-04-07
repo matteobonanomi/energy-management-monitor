@@ -1,3 +1,9 @@
+"""Persistence helpers for forecast execution state.
+
+Forecast runs are written and read here so orchestration code can stay focused
+on model flow rather than SQL details.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,7 +19,10 @@ from app.schemas.forecasts import ForecastRunListFilters
 
 
 class ForecastRepository:
+    """Manage forecast run lifecycle and historical data retrieval."""
+
     def list_runs(self, session: Session, filters: ForecastRunListFilters) -> list[tuple[ForecastRun, int]]:
+        """Return recent runs with point counts for lightweight UI inspection."""
         point_count = func.count(ForecastValue.id)
         stmt = (
             select(ForecastRun, point_count.label("point_count"))
@@ -33,9 +42,11 @@ class ForecastRepository:
         return [(row[0], int(row[1])) for row in session.execute(stmt).all()]
 
     def get_run(self, session: Session, run_id: int) -> ForecastRun | None:
+        """Load a run by id so callers can decide how to handle absence."""
         return session.get(ForecastRun, run_id)
 
     def get_run_values(self, session: Session, run_id: int) -> list[ForecastValue]:
+        """Return persisted forecast points in chronological order for plotting."""
         stmt = select(ForecastValue).where(ForecastValue.forecast_run_id == run_id).order_by(ForecastValue.target_timestamp)
         return session.execute(stmt).scalars().all()
 
@@ -51,6 +62,7 @@ class ForecastRepository:
         model_name: str,
         metadata_json: dict | None,
     ) -> ForecastRun:
+        """Persist a run before execution so failures remain observable."""
         run = ForecastRun(
             scope=scope,
             target_code=target_code,
@@ -77,6 +89,7 @@ class ForecastRepository:
         completed_at: datetime,
         metadata_json: dict | None,
     ) -> None:
+        """Finalize a run atomically with its output points and resolved metadata."""
         for point in points:
             session.add(
                 ForecastValue(
@@ -101,6 +114,7 @@ class ForecastRepository:
         completed_at: datetime,
         metadata_json: dict | None,
     ) -> None:
+        """Persist failure details so operational troubleshooting has a source of truth."""
         run.status = "failed"
         run.completed_at = completed_at
         run.metadata_json = metadata_json
@@ -116,6 +130,7 @@ class ForecastRepository:
         granularity: str,
         market_session: str,
     ) -> list[SeriesRow]:
+        """Reuse dashboard aggregation logic to keep forecast history inputs aligned with the UI."""
         from app.repositories.dashboard_repository import DashboardRepository
 
         dashboard_repository = DashboardRepository()

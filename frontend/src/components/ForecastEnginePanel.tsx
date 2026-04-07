@@ -113,6 +113,10 @@ function buildResultSummary(run: ForecastRunDetailResponse): ResultSummary {
   };
 }
 
+/**
+ * Concentrates forecast controls and execution feedback so model selection,
+ * advanced settings, and run outcomes stay in one decision-making surface.
+ */
 export function ForecastEnginePanel({
   role,
   value,

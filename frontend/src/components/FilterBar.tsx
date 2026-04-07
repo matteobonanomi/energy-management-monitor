@@ -38,6 +38,10 @@ function FilterChip({
   );
 }
 
+/**
+ * Centralizes dashboard filters so cross-panel scope changes remain coherent
+ * and downstream hooks can rely on one canonical filter state.
+ */
 export function FilterBar({
   filtersData,
   value,

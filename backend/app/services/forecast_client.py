@@ -1,3 +1,9 @@
+"""HTTP client for the external forecast microservice.
+
+The backend talks to forecasting through a dedicated client so transport
+details and response parsing stay separate from forecast orchestration.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,12 +21,16 @@ logger = structlog.get_logger(__name__)
 
 @dataclass(slots=True)
 class ForecastResultPoint:
+    """Represent forecast output points in a transport-neutral shape."""
+
     timestamp: datetime
     value: float
 
 
 @dataclass(slots=True)
 class ForecastClientResult:
+    """Carry parsed forecast-service results back to the orchestration layer."""
+
     model_name: str
     fallback_used: bool
     generated_at: datetime
@@ -30,6 +40,8 @@ class ForecastClientResult:
 
 
 class ForecastClient:
+    """Wrap forecast-service HTTP calls behind a small backend-facing contract."""
+
     def __init__(self, base_url: str | None = None, timeout_seconds: float = 120.0) -> None:
         settings = get_settings()
         self.base_url = (base_url or settings.forecast_service_url).rstrip("/")
@@ -45,6 +57,7 @@ class ForecastClient:
         history: list[TimeSeriesPoint],
         advanced_settings: dict[str, Any] | None = None,
     ) -> ForecastClientResult:
+        """Call the forecast microservice and normalize its response for backend use."""
         payload = {
             "model_name": model_name,
             "signal_type": signal_type,

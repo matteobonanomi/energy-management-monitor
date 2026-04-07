@@ -96,6 +96,10 @@ const metricDefinitions = [
   },
 ];
 
+/**
+ * Keeps the portfolio persona focused on a fixed KPI set so the top-level
+ * operating readout remains stable across demos and role switches.
+ */
 export function PortfolioKpiGrid({
   summary,
   loading,

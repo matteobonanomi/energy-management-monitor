@@ -1,3 +1,9 @@
+"""Telemetry storage abstractions for user action tracking.
+
+Tracking persistence is optional in local environments, so the repository
+layer hides whether events are stored or intentionally skipped.
+"""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -9,12 +15,16 @@ from app.core.settings import Settings, get_settings
 
 
 class UserActionRepository(Protocol):
+    """Describe the tracking persistence contract independent of MongoDB."""
+
     def is_enabled(self) -> bool: ...
 
     def insert_events(self, documents: list[dict[str, Any]]) -> int: ...
 
 
 class NoOpUserActionRepository:
+    """Provide a safe fallback when tracking is disabled for the environment."""
+
     def is_enabled(self) -> bool:
         return False
 
@@ -23,6 +33,8 @@ class NoOpUserActionRepository:
 
 
 class MongoUserActionRepository:
+    """Store user actions in MongoDB without leaking driver details upward."""
+
     def __init__(
         self,
         *,
@@ -51,10 +63,12 @@ class MongoUserActionRepository:
 
 @lru_cache
 def get_user_action_repository() -> UserActionRepository:
+    """Cache the tracking repository so request handling does not rebuild clients."""
     return build_user_action_repository(get_settings())
 
 
 def build_user_action_repository(settings: Settings) -> UserActionRepository:
+    """Choose the least risky tracking backend for the current environment."""
     if not settings.mongo_enabled or not settings.mongo_url:
         return NoOpUserActionRepository()
 

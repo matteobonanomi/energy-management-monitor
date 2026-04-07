@@ -12,6 +12,10 @@ interface MonitorPanelProps {
   children: ReactNode;
 }
 
+/**
+ * Wraps monitor content with a shared time-window affordance so read-only
+ * panels can stay composable while exposing the same exploration pattern.
+ */
 export function MonitorPanel({
   title,
   subtitle,

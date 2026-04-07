@@ -9,6 +9,10 @@ interface SectionCardProps {
   className?: string;
 }
 
+/**
+ * Standardizes panel framing so dense dashboard content keeps a predictable
+ * rhythm across monitors, KPI blocks, and narrative sections.
+ */
 export function SectionCard({
   eyebrow,
   title,
@@ -39,6 +43,10 @@ interface StatePanelProps {
   onAction?: () => void;
 }
 
+/**
+ * Makes loading explicit at panel level so the grid can degrade gracefully
+ * while upstream data is still resolving.
+ */
 export function LoadingPanel({ title, message }: StatePanelProps) {
   return (
     <SectionCard title={title}>
@@ -50,6 +58,10 @@ export function LoadingPanel({ title, message }: StatePanelProps) {
   );
 }
 
+/**
+ * Gives retryable failures a consistent treatment so recovery affordances do
+ * not have to be reinvented in each feature module.
+ */
 export function ErrorPanel({
   title,
   message,
@@ -70,6 +82,10 @@ export function ErrorPanel({
   );
 }
 
+/**
+ * Reserves space for valid but currently unpopulated states without implying
+ * that the panel failed to load.
+ */
 export function EmptyPanel({
   title,
   message,

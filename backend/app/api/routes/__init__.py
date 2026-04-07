@@ -1,3 +1,9 @@
+"""Route composition for the backend HTTP surface.
+
+Aggregating routers here keeps `main.py` focused on application bootstrap and
+makes the public API surface easy to discover in one file.
+"""
+
 from fastapi import APIRouter
 
 from app.api.routes.dashboard import router as dashboard_router

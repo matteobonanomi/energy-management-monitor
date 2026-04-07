@@ -74,6 +74,10 @@ const granularityOptions: Option<Granularity>[] = [
   { label: "1h", value: "1h" },
 ];
 
+/**
+ * Keeps the global dashboard switches together so high-impact context changes
+ * feel immediate and stay visually distinct from panel-level interactions.
+ */
 export function AppHeader({
   role,
   theme,

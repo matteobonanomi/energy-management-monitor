@@ -11,6 +11,10 @@ interface ForecastLabViewProps {
   granularity: Granularity;
 }
 
+/**
+ * Preserves the legacy forecast lab entrypoint so older flows remain available
+ * while the main forecast trigger lives inside the dashboard grid.
+ */
 export function ForecastLabView({
   filtersData: _filtersData,
   filters: _filters,

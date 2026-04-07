@@ -1,3 +1,9 @@
+"""Dependency helpers that translate HTTP input into domain-friendly objects.
+
+Keeping this mapping outside route handlers helps routers stay declarative and
+ensures filters are constructed the same way everywhere they are reused.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,6 +31,7 @@ def get_dashboard_filters(
     granularity: Annotated[str, Query(pattern="^(15m|1h)$")] = "15m",
     breakdown_by: Annotated[SeriesBreakdown, Query()] = "none",
 ) -> DashboardQueryFilters:
+    """Collect dashboard query parameters into one validated filter object."""
     return DashboardQueryFilters(
         technology=technology or [],
         plant_code=plant_code or [],
@@ -47,6 +54,7 @@ def get_actual_forecast_filters(
     granularity: Annotated[str, Query(pattern="^(15m|1h)$")] = "15m",
     forecast_run_id: Annotated[int | None, Query()] = None,
 ) -> ActualForecastQueryFilters:
+    """Keep actual-vs-forecast selection rules consistent with dashboard filters."""
     return ActualForecastQueryFilters(
         technology=technology or [],
         plant_code=plant_code or [],
@@ -66,6 +74,7 @@ def get_forecast_run_filters(
     granularity: Annotated[str | None, Query(pattern="^(15m|1h)$")] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 20,
 ) -> ForecastRunListFilters:
+    """Normalize list-query inputs before they reach the forecast service layer."""
     return ForecastRunListFilters(
         scope=scope,
         status=status,
@@ -76,6 +85,7 @@ def get_forecast_run_filters(
 
 
 def get_user_action_service() -> UserActionService:
+    """Construct the tracker service behind one dependency for easier swapping in tests."""
     repository = get_user_action_repository()
     return UserActionService(repository)
 

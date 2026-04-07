@@ -139,6 +139,10 @@ async function loadTechnologyShare(
   };
 }
 
+/**
+ * Defines the selectable analyst KPI inventory in one place so picker UX and
+ * asynchronous loaders stay coupled to the same business vocabulary.
+ */
 export const analystKpiCatalog: AnalystKpiDefinition[] = [
   {
     id: "avg_total_prod_24h",
@@ -288,6 +292,10 @@ const analystKpiLoaders: Record<
     loadTechnologyShare(maxTimestamp, granularity, "7d", ["pv", "wind", "hydro"]),
 };
 
+/**
+ * Resolves KPI values lazily so the analyst grid can stay configurable without
+ * preloading every metric for every session.
+ */
 export async function loadAnalystKpiValue(
   kpiId: string,
   maxTimestamp: string,

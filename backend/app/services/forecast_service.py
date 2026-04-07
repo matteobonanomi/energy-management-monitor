@@ -1,3 +1,9 @@
+"""Forecast orchestration for the backend API.
+
+This service owns the workflow that bridges persisted history, remote model
+execution, run tracking, and HTTP-friendly error semantics.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -24,6 +30,8 @@ logger = structlog.get_logger(__name__)
 
 
 class ForecastService:
+    """Coordinate forecast execution and retrieval without embedding SQL or HTTP details in routes."""
+
     def __init__(
         self,
         repository: ForecastRepository | None = None,
@@ -33,6 +41,7 @@ class ForecastService:
         self.forecast_client = forecast_client or ForecastClient()
 
     def list_runs(self, session: Session, filters) -> ForecastRunsResponse:
+        """List recent runs in a compact shape suitable for dashboard history panels."""
         runs = self.repository.list_runs(session, filters)
         logger.info("forecast_runs_listed", count=len(runs))
         return ForecastRunsResponse(
@@ -56,6 +65,7 @@ class ForecastService:
         )
 
     def get_run_detail(self, session: Session, run_id: int) -> ForecastRunDetailResponse:
+        """Return persisted forecast details or raise a route-friendly not-found error."""
         run = self.repository.get_run(session, run_id)
         if run is None:
             raise HTTPException(status_code=404, detail="forecast run not found")
@@ -86,6 +96,7 @@ class ForecastService:
         session: Session,
         request: ForecastExecutionRequest,
     ) -> ForecastExecutionResponse:
+        """Execute the full forecast workflow while preserving run traceability on success and failure."""
         started_at = perf_counter()
         requested_targets = self._resolve_requested_targets(request.target_kind)
         runs: list[ForecastRunDetailResponse] = []

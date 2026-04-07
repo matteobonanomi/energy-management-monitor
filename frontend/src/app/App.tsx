@@ -55,6 +55,10 @@ function sameScope(
   return scope === expectedScope && (targetCode ?? null) === (expectedTargetCode ?? null);
 }
 
+/**
+ * Hosts the single-page dashboard shell so persona, theme, granularity, and
+ * forecast state remain coordinated across panels and overlays.
+ */
 export function App() {
   const [role, setRole] = useState<UserRole>("portfolioManager");
   const [theme, setTheme] = useState<ThemeMode>("dark");

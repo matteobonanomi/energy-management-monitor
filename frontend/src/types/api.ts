@@ -174,6 +174,7 @@ export interface ForecastExecutionRequest {
   advanced_settings?: ForecastAdvancedSettings | null;
   production_scope?: ForecastProductionScope;
   production_target_code?: string | null;
+  include_production_breakdowns?: boolean;
 }
 
 export interface ForecastExecutionResponse {

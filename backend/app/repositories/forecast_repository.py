@@ -11,7 +11,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import ForecastRun, ForecastValue
+from app.db.models import ForecastRun, ForecastValue, Plant, ProductionMeasurement
 from app.repositories.dashboard_repository import SeriesRow
 from app.services.forecast_client import ForecastResultPoint
 from app.schemas.dashboard import DashboardQueryFilters
@@ -49,6 +49,24 @@ class ForecastRepository:
         """Return persisted forecast points in chronological order for plotting."""
         stmt = select(ForecastValue).where(ForecastValue.forecast_run_id == run_id).order_by(ForecastValue.target_timestamp)
         return session.execute(stmt).scalars().all()
+
+    def list_available_production_technologies(
+        self,
+        session: Session,
+        *,
+        market_zone: str | None = None,
+    ) -> list[str]:
+        """Return technologies with history, optionally scoped to one market zone for analyst breakdown forecasts."""
+        stmt = (
+            select(Plant.technology)
+            .select_from(Plant)
+            .join(ProductionMeasurement, ProductionMeasurement.plant_code == Plant.code)
+            .distinct()
+            .order_by(Plant.technology)
+        )
+        if market_zone:
+            stmt = stmt.where(Plant.market_zone == market_zone)
+        return list(session.execute(stmt).scalars().all())
 
     def create_run(
         self,
@@ -126,17 +144,25 @@ class ForecastRepository:
         *,
         scope: str,
         target_code: str | None,
+        market_zone_filter: str | None = None,
         signal_type: str,
         granularity: str,
         market_session: str,
     ) -> list[SeriesRow]:
-        """Reuse dashboard aggregation logic to keep forecast history inputs aligned with the UI."""
+        """Reuse dashboard aggregation logic so forecast history stays aligned with dashboard filters and granularity."""
         from app.repositories.dashboard_repository import DashboardRepository
 
         dashboard_repository = DashboardRepository()
         filters = DashboardQueryFilters(
+            technology=[target_code] if scope == "technology" and target_code else [],
             plant_code=[target_code] if scope == "plant" and target_code else [],
-            market_zone=[target_code] if scope == "zone" and target_code else [],
+            market_zone=(
+                [target_code]
+                if scope == "zone" and target_code
+                else [market_zone_filter]
+                if market_zone_filter
+                else []
+            ),
             market_session=market_session,
             granularity=granularity,
             breakdown_by="none",

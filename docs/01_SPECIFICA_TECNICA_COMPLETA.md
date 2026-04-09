@@ -13,13 +13,14 @@ La demo ha due obiettivi:
 
 La web app offre oggi:
 
-- header compatto con `Persona`, `Theme`, `Granularity`
+- header sticky con KPI rapidi e popup impostazioni per `Persona`, `Theme`, `Granularity`
 - layout singolo in griglia `2x2`
 - monitor prezzi
 - monitor produzione portfolio
 - area KPI `3x2`
 - `Forecast Engine` con selezione modello, orizzonte e target
-- distinzione visiva actual vs forecast con linea tratteggiata
+- box `RESULTS` compatto con `status`, `durata`, `modelli` e popup `MORE DETAILS` per metriche estese
+- distinzione visiva actual vs forecast con linee tratteggiate
 - tracking azioni utente verso MongoDB
 
 ## Personas
@@ -37,6 +38,7 @@ Vista oggi ottimizzata per sintesi:
 
 La beta usa temporaneamente la stessa composizione del Portfolio Manager.
 Il ruolo resta utile a livello architetturale perché i payload UI e il tracking eventi sono già predisposti per future personalizzazioni.
+Quando il target include la produzione aggregata, la simulazione può lanciare un run totale più run per tecnologia, in linea con la vista Portfolio Manager.
 
 ## Architettura target
 
@@ -80,10 +82,11 @@ Il ruolo resta utile a livello architetturale perché i payload UI e il tracking
 1. l'utente seleziona modello, orizzonte e target
 2. il frontend invia `POST /forecasts/runs`
 3. il backend recupera storico aggregato da PostgreSQL
-4. il backend chiama `forecast-service`
-5. il forecast-service restituisce punti e metadata
+4. per richieste produzione aggregate (Portfolio Manager e Data Analyst), il backend può creare sia il forecast aggregato sia run separati per tecnologia
+5. il backend chiama `forecast-service`
 6. il backend persiste i run SQL
-7. il frontend mostra il forecast nei grafici superiori
+7. il frontend mostra il forecast nei grafici superiori, includendo overlay portfolio e per-tecnologia dove richiesto
+8. il forecast-service restituisce punti e metadata, con metriche dettagliate consultabili dalla popup `MORE DETAILS`
 
 ### Tracking eventi utente
 
@@ -129,6 +132,6 @@ Il ruolo resta utile a livello architetturale perché i payload UI e il tracking
 
 ## Limiti consapevoli
 
-- vista `Data Analyst` ancora non specializzata
+- vista `Data Analyst` ancora parzialmente sovrapposta al `Portfolio Manager` nel layout
 - auto-restore dell'ultimo forecast non ancora implementato al refresh
 - la demo non è da considerarsi production-ready o normativamente compliant

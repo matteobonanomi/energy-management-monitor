@@ -107,6 +107,13 @@ const technologyPalette: Record<string, string> = {
   gas: "#f97316",
 };
 
+function resolveForecastLineColor(seriesKey: string): string {
+  if (seriesKey === "forecast_total") {
+    return "#0f766e";
+  }
+  return technologyPalette[seriesKey.replace("forecast_", "")] ?? "#0f766e";
+}
+
 /**
  * Favors stacked production reading so technology contribution remains legible
  * before the user drills into forecast overlays or analyst views.
@@ -227,18 +234,18 @@ export function MonitorLineChart({
 }
 
 /**
- * Preserves technology layering while allowing a total forecast overlay, which
- * makes production composition and forward view readable at once.
+ * Preserves technology layering while allowing multiple dashed overlays, so
+ * total and per-technology forecasts remain legible on one canvas.
  */
 export function MonitorStackedAreaChart({
   data,
   areaSeriesKeys,
-  forecastSeriesKey = "forecast",
+  forecastLineKeys = [],
   labelMap = {},
 }: {
   data: ChartDatum[];
   areaSeriesKeys: string[];
-  forecastSeriesKey?: string;
+  forecastLineKeys?: string[];
   labelMap?: Record<string, string>;
 }) {
   return (
@@ -293,17 +300,20 @@ export function MonitorStackedAreaChart({
               dot={false}
             />
           ))}
-          {data.some((row) => row[forecastSeriesKey] !== null && row[forecastSeriesKey] !== undefined) ? (
-            <Line
-              type="monotone"
-              dataKey={forecastSeriesKey}
-              name={labelMap[forecastSeriesKey] ?? "Forecast"}
-              stroke="#0f766e"
-              strokeDasharray="7 4"
-              strokeWidth={2.6}
-              dot={false}
-            />
-          ) : null}
+          {forecastLineKeys.map((seriesKey) =>
+            data.some((row) => row[seriesKey] !== null && row[seriesKey] !== undefined) ? (
+              <Line
+                key={seriesKey}
+                type="monotone"
+                dataKey={seriesKey}
+                name={labelMap[seriesKey] ?? "Forecast"}
+                stroke={resolveForecastLineColor(seriesKey)}
+                strokeDasharray="7 4"
+                strokeWidth={seriesKey === "forecast_total" ? 2.8 : 2.2}
+                dot={false}
+              />
+            ) : null,
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -317,10 +327,12 @@ export function MonitorStackedAreaChart({
 export function DualAxisProductionPriceChart({
   data,
   productionSeriesKeys,
+  productionForecastSeriesKeys = [],
   labelMap = {},
 }: {
   data: ChartDatum[];
   productionSeriesKeys: string[];
+  productionForecastSeriesKeys?: string[];
   labelMap?: Record<string, string>;
 }) {
   return (
@@ -377,18 +389,21 @@ export function DualAxisProductionPriceChart({
               dot={false}
             />
           ))}
-          {data.some((row) => row.productionForecast !== null && row.productionForecast !== undefined) ? (
-            <Line
-              yAxisId="production"
-              type="monotone"
-              dataKey="productionForecast"
-              name={labelMap.productionForecast ?? "Production forecast"}
-              stroke="#0f766e"
-              strokeDasharray="7 4"
-              strokeWidth={2.8}
-              dot={false}
-            />
-          ) : null}
+          {productionForecastSeriesKeys.map((seriesKey) =>
+            data.some((row) => row[seriesKey] !== null && row[seriesKey] !== undefined) ? (
+              <Line
+                key={seriesKey}
+                yAxisId="production"
+                type="monotone"
+                dataKey={seriesKey}
+                name={labelMap[seriesKey] ?? "Production forecast"}
+                stroke={resolveForecastLineColor(seriesKey)}
+                strokeDasharray="7 4"
+                strokeWidth={seriesKey === "forecast_total" ? 2.8 : 2.2}
+                dot={false}
+              />
+            ) : null,
+          )}
           <Line
             yAxisId="price"
             type="monotone"

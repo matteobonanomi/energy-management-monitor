@@ -14,6 +14,7 @@ import structlog
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.db.models import TECHNOLOGIES
 from app.repositories.common import normalize_timestamp
 from app.repositories.forecast_repository import ForecastRepository
 from app.schemas.forecasts import (
@@ -102,101 +103,115 @@ class ForecastService:
         runs: list[ForecastRunDetailResponse] = []
 
         for signal_type in requested_targets:
-            scope, target_code = self._resolve_signal_scope(signal_type, request)
-            history_rows = self.repository.get_history(
+            for scope, target_code, market_zone_filter in self._resolve_signal_targets(
                 session,
-                scope=scope,
-                target_code=target_code,
-                signal_type=signal_type,
-                granularity=request.granularity,
-                market_session=request.market_session,
-            )
-            history = [
-                TimeSeriesPoint(timestamp=normalize_timestamp(row.bucket), value=round(row.value, 4))
-                for row in history_rows
-            ]
-            if request.history_points is not None:
-                history = history[-request.history_points :]
+                signal_type,
+                request,
+            ):
+                history_rows = self.repository.get_history(
+                    session,
+                    scope=scope,
+                    target_code=target_code,
+                    market_zone_filter=market_zone_filter,
+                    signal_type=signal_type,
+                    granularity=request.granularity,
+                    market_session=request.market_session,
+                )
+                history = [
+                    TimeSeriesPoint(timestamp=normalize_timestamp(row.bucket), value=round(row.value, 4))
+                    for row in history_rows
+                ]
+                if request.history_points is not None:
+                    history = history[-request.history_points :]
 
-            if not history:
-                raise HTTPException(status_code=400, detail=f"no historical data available for {signal_type}")
+                if not history:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"no historical data available for {signal_type}",
+                    )
 
-            run = self.repository.create_run(
-                session,
-                scope=scope,
-                target_code=target_code,
-                signal_type=signal_type,
-                granularity=request.granularity,
-                horizon=request.horizon,
-                model_name=request.model_type,
-                metadata_json={
-                    "market_session": request.market_session,
-                    "history_points": len(history),
-                    "signal_type": signal_type,
-                    "requested_model_name": request.model_type,
-                    "advanced_settings": request.advanced_settings,
-                    "scope": scope,
-                    "target_code": target_code,
-                },
-            )
-
-            try:
-                result = self.forecast_client.predict(
-                    model_name=request.model_type,
+                run = self.repository.create_run(
+                    session,
+                    scope=scope,
+                    target_code=target_code,
                     signal_type=signal_type,
                     granularity=request.granularity,
                     horizon=request.horizon,
-                    history=history,
-                    advanced_settings=request.advanced_settings,
+                    model_name=request.model_type,
+                    metadata_json={
+                        "market_session": request.market_session,
+                        "history_points": len(history),
+                        "signal_type": signal_type,
+                        "requested_model_name": request.model_type,
+                        "advanced_settings": request.advanced_settings,
+                        "scope": scope,
+                        "target_code": target_code,
+                        "history_market_zone_filter": market_zone_filter,
+                        "include_production_breakdowns": request.include_production_breakdowns,
+                    },
                 )
-            except httpx.HTTPError as exc:
-                error_metadata = {
+
+                try:
+                    result = self.forecast_client.predict(
+                        model_name=request.model_type,
+                        signal_type=signal_type,
+                        granularity=request.granularity,
+                        horizon=request.horizon,
+                        history=history,
+                        advanced_settings=request.advanced_settings,
+                    )
+                except httpx.HTTPError as exc:
+                    error_metadata = {
+                        "market_session": request.market_session,
+                        "history_points": len(history),
+                        "signal_type": signal_type,
+                        "error": str(exc),
+                        "requested_model_name": request.model_type,
+                        "advanced_settings": request.advanced_settings,
+                        "scope": scope,
+                        "target_code": target_code,
+                        "history_market_zone_filter": market_zone_filter,
+                        "include_production_breakdowns": request.include_production_breakdowns,
+                    }
+                    self.repository.fail_run(
+                        session,
+                        run,
+                        completed_at=datetime.now(timezone.utc),
+                        metadata_json=error_metadata,
+                    )
+                    session.commit()
+                    logger.exception("forecast_execution_failed", run_id=run.id, signal_type=signal_type)
+                    raise HTTPException(status_code=502, detail=f"forecast service request failed: {exc}") from exc
+
+                metadata_json = {
                     "market_session": request.market_session,
                     "history_points": len(history),
                     "signal_type": signal_type,
-                    "error": str(exc),
+                    "generated_at": result.generated_at.isoformat(),
+                    "first_target_timestamp": result.points[0].timestamp.isoformat() if result.points else None,
+                    "last_target_timestamp": result.points[-1].timestamp.isoformat() if result.points else None,
                     "requested_model_name": request.model_type,
                     "advanced_settings": request.advanced_settings,
+                    "processing_ms": result.processing_ms,
                     "scope": scope,
                     "target_code": target_code,
+                    "history_market_zone_filter": market_zone_filter,
+                    "include_production_breakdowns": request.include_production_breakdowns,
                 }
-                self.repository.fail_run(
+                if result.metadata_json:
+                    metadata_json.update(result.metadata_json)
+
+                self.repository.complete_run(
                     session,
                     run,
+                    points=result.points,
+                    resolved_model_name=result.model_name,
+                    fallback_used=result.fallback_used,
                     completed_at=datetime.now(timezone.utc),
-                    metadata_json=error_metadata,
+                    metadata_json=metadata_json,
                 )
                 session.commit()
-                logger.exception("forecast_execution_failed", run_id=run.id, signal_type=signal_type)
-                raise HTTPException(status_code=502, detail=f"forecast service request failed: {exc}") from exc
-
-            metadata_json = {
-                "market_session": request.market_session,
-                "history_points": len(history),
-                "signal_type": signal_type,
-                "generated_at": result.generated_at.isoformat(),
-                "first_target_timestamp": result.points[0].timestamp.isoformat() if result.points else None,
-                "last_target_timestamp": result.points[-1].timestamp.isoformat() if result.points else None,
-                "requested_model_name": request.model_type,
-                "advanced_settings": request.advanced_settings,
-                "processing_ms": result.processing_ms,
-                "scope": scope,
-                "target_code": target_code,
-            }
-            if result.metadata_json:
-                metadata_json.update(result.metadata_json)
-
-            self.repository.complete_run(
-                session,
-                run,
-                points=result.points,
-                resolved_model_name=result.model_name,
-                fallback_used=result.fallback_used,
-                completed_at=datetime.now(timezone.utc),
-                metadata_json=metadata_json,
-            )
-            session.commit()
-            runs.append(self.get_run_detail(session, run.id))
+                runs.append(self.get_run_detail(session, run.id))
 
         logger.info(
             "forecast_execution_completed",
@@ -221,6 +236,37 @@ class ForecastService:
         if target_kind == "volume":
             return ["production"]
         return ["price", "production"]
+
+    def _resolve_signal_targets(
+        self,
+        session: Session,
+        signal_type: str,
+        request: ForecastExecutionRequest,
+    ) -> list[tuple[str, str | None, str | None]]:
+        """Expand production targets into aggregate plus technology runs for stacked overlays in both manager and analyst views."""
+        scope, target_code = self._resolve_signal_scope(signal_type, request)
+        if signal_type != "production":
+            return [(scope, target_code, None)]
+
+        # Plant-level runs stay single-target, while aggregated scopes can fan out
+        # into one model per technology for dashed component overlays.
+        if not request.include_production_breakdowns or scope == "plant":
+            return [(scope, target_code, None)]
+
+        market_zone_filter = target_code if scope == "zone" else None
+
+        technology_order = {technology: index for index, technology in enumerate(TECHNOLOGIES)}
+        technologies = sorted(
+            self.repository.list_available_production_technologies(
+                session,
+                market_zone=market_zone_filter,
+            ),
+            key=lambda technology: technology_order.get(technology, len(technology_order)),
+        )
+        return [
+            (scope, target_code, None),
+            *[("technology", technology, market_zone_filter) for technology in technologies],
+        ]
 
     def _resolve_signal_scope(
         self,

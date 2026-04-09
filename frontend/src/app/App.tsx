@@ -19,7 +19,9 @@ import { useFiltersData } from "../hooks/useFiltersData";
 import { useMonitorSeries } from "../hooks/useMonitorSeries";
 import { usePortfolioSummary } from "../hooks/usePortfolioSummary";
 import { forecastModelOptionsByRole } from "../lib/forecastModelConfig";
+import { buildPortfolioHeaderKpis } from "../lib/portfolioKpis";
 import {
+  buildProductionForecastSeriesKey,
   buildDualAxisChartData,
   buildMonitorForecastChartData,
   buildStackedMonitorChartData,
@@ -75,6 +77,10 @@ export function App() {
   const filtersResource = useFiltersData();
   const summaryResource = usePortfolioSummary(EMPTY_FILTERS, granularity);
   const forecastExecution = useForecastExecution(granularity);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (role !== "portfolioManager") {
@@ -199,47 +205,113 @@ export function App() {
     },
   });
 
+  const forecastRuns = forecastExecution.response?.runs ?? [];
   const pmPriceRun = forecastExecution.runsBySignal.price ?? null;
-  const pmProductionRun =
-    forecastExecution.runsBySignal.production &&
-    sameScope(
-      forecastExecution.runsBySignal.production.scope,
-      forecastExecution.runsBySignal.production.target_code,
-      "portfolio",
-      null,
-    )
-      ? forecastExecution.runsBySignal.production
-      : null;
   const analystPriceRun = forecastExecution.runsBySignal.price ?? null;
-  const analystProductionRun =
-    forecastExecution.runsBySignal.production &&
-    sameScope(
-      forecastExecution.runsBySignal.production.scope,
-      forecastExecution.runsBySignal.production.target_code,
-      analystProductionConfig.scope,
-      analystProductionConfig.targetCode,
-    )
-      ? forecastExecution.runsBySignal.production
-      : null;
+  const pmProductionRuns = useMemo(
+    () =>
+      forecastRuns.filter(
+        (run) =>
+          run.signal_type === "production" &&
+          (run.scope === "portfolio" || run.scope === "technology"),
+      ),
+    [forecastRuns],
+  );
+  const analystProductionRun = useMemo(
+    () =>
+      forecastRuns.find(
+        (run) =>
+          run.signal_type === "production" &&
+          sameScope(
+            run.scope,
+            run.target_code,
+            analystProductionConfig.scope,
+            analystProductionConfig.targetCode,
+          ),
+      ) ?? null,
+    [analystProductionConfig.scope, analystProductionConfig.targetCode, forecastRuns],
+  );
+  const analystProductionForecastRuns = useMemo(() => {
+    if (!analystProductionRun) {
+      return [];
+    }
+
+    return forecastRuns.filter(
+      (run) =>
+        run.signal_type === "production" &&
+        (sameScope(
+          run.scope,
+          run.target_code,
+          analystProductionConfig.scope,
+          analystProductionConfig.targetCode,
+        ) ||
+          run.scope === "technology"),
+    );
+  }, [
+    analystProductionConfig.scope,
+    analystProductionConfig.targetCode,
+    analystProductionRun,
+    forecastRuns,
+  ]);
 
   const priceActualPoints = priceMonitor.data?.series[0]?.points ?? [];
   const energyActualSeries = energyMonitor.data?.series ?? [];
   const priceForecastPoints = pmPriceRun?.values ?? [];
-  const energyForecastPoints = pmProductionRun?.values ?? [];
   const priceChartData = buildMonitorForecastChartData(priceActualPoints, priceForecastPoints);
-  const energyChartData = buildStackedMonitorChartData(energyActualSeries, energyForecastPoints);
   const energySeriesKeys = useMemo(() => {
     const available = new Set(energyActualSeries.map((series) => series.key));
     return ["pv", "wind", "hydro", "gas"].filter((seriesKey) => available.has(seriesKey));
   }, [energyActualSeries]);
+  const portfolioEnergyForecastRuns = useMemo(() => {
+    const activeTechnologyKeys = new Set(energySeriesKeys);
+    return pmProductionRuns.filter(
+      (run) =>
+        run.scope === "portfolio" ||
+        (run.scope === "technology" &&
+          Boolean(run.target_code) &&
+          activeTechnologyKeys.has(run.target_code!)),
+    );
+  }, [energySeriesKeys, pmProductionRuns]);
+  const energyChartData = buildStackedMonitorChartData(
+    energyActualSeries,
+    portfolioEnergyForecastRuns,
+  );
+  const energyForecastLineKeys = useMemo(
+    () =>
+      portfolioEnergyForecastRuns.map((run) =>
+        buildProductionForecastSeriesKey(run.scope, run.target_code),
+      ),
+    [portfolioEnergyForecastRuns],
+  );
+  const energyLabelMap = useMemo(
+    () => ({
+      pv: "PV",
+      wind: "WIND",
+      hydro: "IDRO",
+      gas: "GAS",
+      forecast_total: "Total forecast",
+      forecast_pv: "PV forecast",
+      forecast_wind: "WIND forecast",
+      forecast_hydro: "IDRO forecast",
+      forecast_gas: "GAS forecast",
+    }),
+    [],
+  );
 
   const analystPriceActualPoints = analystPriceMonitor.data?.series[0]?.points ?? [];
   const analystProductionSeries = analystProductionMonitor.data?.series ?? [];
   const analystChartData = buildDualAxisChartData(
     analystProductionSeries,
     analystPriceActualPoints,
-    analystProductionRun?.values ?? [],
+    analystProductionForecastRuns,
     analystPriceRun?.values ?? [],
+  );
+  const analystForecastLineKeys = useMemo(
+    () =>
+      analystProductionForecastRuns.map((run) =>
+        buildProductionForecastSeriesKey(run.scope, run.target_code),
+      ),
+    [analystProductionForecastRuns],
   );
   const analystSeriesKeys = useMemo(() => {
     const available = new Set(analystProductionSeries.map((series) => series.key));
@@ -248,6 +320,10 @@ export function App() {
   }, [analystProductionSeries]);
 
   const apiBootstrapError = filtersResource.error;
+  const headerKpis = useMemo(
+    () => buildPortfolioHeaderKpis(summaryResource.data),
+    [summaryResource.data],
+  );
 
   function renderMonitorState(message: string, tone: "loading" | "error") {
     return (
@@ -311,6 +387,7 @@ export function App() {
         theme={theme}
         granularity={granularity}
         isPending={isPending}
+        headerKpis={headerKpis}
         onRoleChange={(nextRole) => {
           setRole(nextRole);
           void trackUserAction({
@@ -406,7 +483,7 @@ export function App() {
 
             <MonitorPanel
               title="Energy monitor"
-              subtitle="Portfolio production stacked by technology, with a forecast overlay on total output over the selected time window."
+              subtitle="Portfolio production stacked by technology, with dashed forecast overlays for total output and each active technology over the selected time window."
               window={energyWindow}
               onWindowChange={(nextWindow) => {
                 setEnergyWindow(nextWindow);
@@ -442,13 +519,8 @@ export function App() {
                 <MonitorStackedAreaChart
                   data={energyChartData}
                   areaSeriesKeys={energySeriesKeys}
-                  labelMap={{
-                    pv: "PV",
-                    wind: "WIND",
-                    hydro: "IDRO",
-                    gas: "GAS",
-                    forecast: "Forecast",
-                  }}
+                  forecastLineKeys={energyForecastLineKeys}
+                  labelMap={energyLabelMap}
                 />
               )}
             </MonitorPanel>
@@ -500,6 +572,7 @@ export function App() {
                 <DualAxisProductionPriceChart
                   data={analystChartData}
                   productionSeriesKeys={analystSeriesKeys}
+                  productionForecastSeriesKeys={analystForecastLineKeys}
                   labelMap={{
                     pv: "PV",
                     wind: "WIND",
@@ -508,7 +581,11 @@ export function App() {
                     actual: selectedPlant?.name ?? "Plant output",
                     priceActual: "Price",
                     priceForecast: "Price forecast",
-                    productionForecast: "Production forecast",
+                    forecast_total: "Production forecast (total)",
+                    forecast_pv: "Production forecast (PV)",
+                    forecast_wind: "Production forecast (WIND)",
+                    forecast_hydro: "Production forecast (IDRO)",
+                    forecast_gas: "Production forecast (GAS)",
                   }}
                 />
               )}
@@ -578,6 +655,10 @@ export function App() {
             onSubmit={(options) =>
               forecastExecution.runForecast({
                 ...options,
+                includeProductionBreakdowns:
+                  forecastExecution.formState.targetKind !== "price" &&
+                  (role === "portfolioManager" ||
+                    analystProductionConfig.scope !== "plant"),
                 productionScope:
                   role === "dataAnalyst"
                     ? analystProductionConfig.scope

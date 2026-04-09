@@ -50,11 +50,12 @@ Accettazione soddisfatta:
 Accettazione soddisfatta:
 
 - vista singola `2x2`
-- switch `Persona / Theme / Granularity`
+- header sticky con popup `Persona / Theme / Granularity`
 - monitor prezzi e produzione
 - KPI portfolio `3x2`
 - `Forecast Engine`
-- forecast visualizzato con linea tratteggiata
+- forecast visualizzato con linee tratteggiate, incluso overlay produzione totale + per-tecnologia nelle richieste aggregate (Portfolio Manager e Data Analyst)
+- box `RESULTS` compatto con popup `MORE DETAILS` per le metriche estese per modello
 - test componenti core presenti
 
 ### Logging e tracking

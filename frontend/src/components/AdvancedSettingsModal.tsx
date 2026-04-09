@@ -138,10 +138,14 @@ export function AdvancedSettingsModal({
 
         <div className="advanced-modal-actions">
           <button type="button" className="ghost-button" onClick={onSave}>
-            SAVE
+            Save
           </button>
-          <button type="button" className="primary-button" onClick={onSaveAndRun}>
-            SAVE&RUN
+          <button
+            type="button"
+            className="primary-button advanced-modal-run-button"
+            onClick={onSaveAndRun}
+          >
+            Save and Run
           </button>
         </div>
       </div>

@@ -70,3 +70,4 @@
 - metadata modello restituiti
 - fallback dichiarato
 - test per casi nominali e storico corto
+- per richieste produzione aggregate (portfolio o zona), il backend può restituire un run produzione aggregato e run separati per tecnologia, così la UI può mostrare overlay tratteggiati coerenti sia in vista Portfolio Manager sia Data Analyst

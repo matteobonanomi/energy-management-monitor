@@ -95,7 +95,7 @@ describe("ForecastEnginePanel", () => {
     );
     await user.clear(screen.getByLabelText("n_estimators"));
     await user.type(screen.getByLabelText("n_estimators"), "150");
-    await user.click(screen.getByRole("button", { name: "SAVE&RUN" }));
+    await user.click(screen.getByRole("button", { name: "Save and Run" }));
 
     expect(onSave).toHaveBeenCalledWith(
       "random_forest",
@@ -108,7 +108,9 @@ describe("ForecastEnginePanel", () => {
     );
   }, 20_000);
 
-  it("renders validation metrics after a completed run", () => {
+  it("keeps RESULTS compact and moves detailed metrics into the details modal", async () => {
+    const user = userEvent.setup();
+
     render(
       <ForecastEnginePanel
         role="portfolioManager"
@@ -158,7 +160,16 @@ describe("ForecastEnginePanel", () => {
     );
 
     expect(screen.getByText("RESULTS")).toBeInTheDocument();
+    expect(screen.getByText("SUCCEED")).toBeInTheDocument();
+    expect(screen.getByText("1.64 s")).toBeInTheDocument();
+    expect(
+      screen.getByText("ARIMA · next_24h · price"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "MORE DETAILS" }));
+
+    expect(screen.getByText("Modello di prezzo")).toBeInTheDocument();
     expect(screen.getByText("MAE 2.34 €/MWh")).toBeInTheDocument();
     expect(screen.getByText(/MAPE 3.8%/i)).toBeInTheDocument();
-  });
+  }, 20_000);
 });

@@ -106,3 +106,61 @@ def test_forecast_service_uses_zone_scope_for_production_when_requested() -> Non
     assert response.requested_targets == ["production"]
     assert response.runs[0].scope == "zone"
     assert response.runs[0].target_code == "NORD"
+
+
+def test_forecast_service_adds_technology_runs_for_portfolio_breakdowns() -> None:
+    session = build_session()
+    service = ForecastService(forecast_client=FakeForecastClient())
+
+    response = service.run_forecast(
+        session,
+        ForecastExecutionRequest(
+            model_type="arima",
+            target_kind="volume",
+            horizon="next_24h",
+            granularity="1h",
+            production_scope="portfolio",
+            include_production_breakdowns=True,
+        ),
+    )
+
+    assert response.requested_targets == ["production"]
+    assert response.runs[0].scope == "portfolio"
+    assert response.runs[0].target_code is None
+    assert {(run.scope, run.target_code) for run in response.runs[1:]} == {
+        ("technology", "pv"),
+        ("technology", "wind"),
+        ("technology", "hydro"),
+        ("technology", "gas"),
+    }
+
+
+def test_forecast_service_adds_zone_filtered_technology_runs_for_breakdowns() -> None:
+    session = build_session()
+    service = ForecastService(forecast_client=FakeForecastClient())
+
+    response = service.run_forecast(
+        session,
+        ForecastExecutionRequest(
+            model_type="arima",
+            target_kind="volume",
+            horizon="next_24h",
+            granularity="1h",
+            production_scope="zone",
+            production_target_code="NORD",
+            include_production_breakdowns=True,
+        ),
+    )
+
+    assert response.requested_targets == ["production"]
+    assert response.runs[0].scope == "zone"
+    assert response.runs[0].target_code == "NORD"
+
+    technology_runs = response.runs[1:]
+    assert technology_runs
+    assert all(run.scope == "technology" for run in technology_runs)
+    assert all(run.target_code in {"pv", "wind", "hydro", "gas"} for run in technology_runs)
+    assert all(
+        run.metadata_json and run.metadata_json.get("history_market_zone_filter") == "NORD"
+        for run in technology_runs
+    )

@@ -82,6 +82,7 @@ class ForecastExecutionRequest(BaseModel):
     advanced_settings: dict | None = None
     production_scope: ForecastProductionScope = "portfolio"
     production_target_code: str | None = None
+    include_production_breakdowns: bool = False
 
 
 class ForecastExecutionResponse(BaseModel):

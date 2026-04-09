@@ -1,9 +1,10 @@
+import type { MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   buildDefaultAdvancedSettings,
   forecastModelOptionsByRole,
-  hyperparametersByModel,
 } from "../lib/forecastModelConfig";
 import { formatDateTime } from "../lib/format";
 import type {
@@ -40,7 +41,9 @@ interface ForecastEnginePanelProps {
 }
 
 interface ResultSummary {
-  label: string;
+  id: number;
+  title: string;
+  recap: string;
   mae: string;
   mape: string;
   validationPeriod: string;
@@ -89,6 +92,32 @@ function formatMape(value: number | null): string {
   })}%`;
 }
 
+function formatRunTitle(run: ForecastRunDetailResponse): string {
+  if (run.signal_type === "price") {
+    return "Modello di prezzo";
+  }
+  if (run.scope === "technology" && run.target_code) {
+    return `Modello di produzione - ${run.target_code.toUpperCase()}`;
+  }
+  if (run.scope === "zone" && run.target_code) {
+    return `Modello di produzione - Zona ${run.target_code}`;
+  }
+  if (run.scope === "plant" && run.target_code) {
+    return `Modello di produzione - Impianto ${run.target_code}`;
+  }
+  return "Modello di produzione - Totale";
+}
+
+function formatRunRecap(run: ForecastRunDetailResponse): string {
+  const parameter =
+    run.signal_type === "price"
+      ? "price"
+      : run.scope === "technology" && run.target_code
+      ? `production ${run.target_code.toUpperCase()}`
+      : "production total";
+  return `${run.model_name.toUpperCase()} · ${run.horizon} · ${parameter}`;
+}
+
 function buildResultSummary(run: ForecastRunDetailResponse): ResultSummary {
   const mae = readMetadataNumber(run, "validation_mae");
   const mape = readMetadataNumber(run, "validation_mape_pct");
@@ -98,7 +127,9 @@ function buildResultSummary(run: ForecastRunDetailResponse): ResultSummary {
   const fallbackReason = readMetadataString(run, "error_summary");
 
   return {
-    label: run.signal_type === "price" ? "Price" : "Volume",
+    id: run.id,
+    title: formatRunTitle(run),
+    recap: formatRunRecap(run),
     mae: formatMae(mae, maeUnit),
     mape: formatMape(mape),
     validationPeriod:
@@ -111,6 +142,60 @@ function buildResultSummary(run: ForecastRunDetailResponse): ResultSummary {
         : "Fallback active on the simple seasonal model."
       : null,
   };
+}
+
+interface ForecastResultDetailsModalProps {
+  summaries: ResultSummary[];
+  onClose: () => void;
+}
+
+function ForecastResultDetailsModal({
+  summaries,
+  onClose,
+}: ForecastResultDetailsModalProps) {
+  function handleBackdropClick(event: MouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
+
+  const modalContent = (
+    <div className="advanced-modal-backdrop" onClick={handleBackdropClick}>
+      <div
+        className="advanced-modal-card forecast-details-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="forecast-details-title"
+      >
+        <button
+          type="button"
+          className="advanced-modal-close"
+          aria-label="Close forecast details"
+          onClick={onClose}
+        >
+          X
+        </button>
+        <div className="advanced-modal-header">
+          <p className="advanced-modal-eyebrow">Forecast details</p>
+          <h3 id="forecast-details-title">Model metrics</h3>
+        </div>
+        <div className="forecast-details-list">
+          {summaries.map((summary) => (
+            <article key={summary.id} className="forecast-details-item">
+              <h4>{summary.title}</h4>
+              <p>{summary.recap}</p>
+              <p>{summary.mae}</p>
+              <p>{summary.mape}</p>
+              <p>{summary.validationPeriod}</p>
+              {summary.fallbackNote ? <p>{summary.fallbackNote}</p> : null}
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
 }
 
 /**
@@ -130,6 +215,7 @@ export function ForecastEnginePanel({
   onSubmit,
 }: ForecastEnginePanelProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [draftSettings, setDraftSettings] = useState<ForecastAdvancedSettings>(
     advancedSettingsByModel[value.modelType],
   );
@@ -137,6 +223,12 @@ export function ForecastEnginePanel({
   useEffect(() => {
     setDraftSettings(advancedSettingsByModel[value.modelType] ?? buildDefaultAdvancedSettings(value.modelType));
   }, [advancedSettingsByModel, value.modelType]);
+
+  useEffect(() => {
+    if (isSubmitting) {
+      setIsDetailsOpen(false);
+    }
+  }, [isSubmitting]);
 
   const availableModels = forecastModelOptionsByRole[role];
   const resultSummaries = useMemo(
@@ -158,6 +250,30 @@ export function ForecastEnginePanel({
     }
     return null;
   }, [errorProcessingMs, response]);
+  const executionStatus = useMemo(() => {
+    if (error) {
+      return "FAIL";
+    }
+    if (response) {
+      return "SUCCEED";
+    }
+    return "--";
+  }, [error, response]);
+  const modelRecapRows = useMemo(() => {
+    if (resultSummaries.length > 0) {
+      return resultSummaries.map((summary) => summary.recap);
+    }
+    if (error) {
+      const requestedParameter =
+        value.targetKind === "both"
+          ? "price + production"
+          : value.targetKind === "price"
+          ? "price"
+          : "production";
+      return [`${value.modelType.toUpperCase()} · ${value.horizon} · ${requestedParameter}`];
+    }
+    return [];
+  }, [error, resultSummaries, value.horizon, value.modelType, value.targetKind]);
 
   function handleAdvancedSettingChange(
     key: string,
@@ -298,47 +414,52 @@ export function ForecastEnginePanel({
               </div>
               <LoadingBattery label="Training, 80/20 validation, and inference are running on the requested signal." />
             </div>
-          ) : error ? (
-            <div className="forecast-status-card forecast-status-error">
-              <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-error">ERRORS</p>
-                {processingCopy ? <span className="forecast-status-timing">{processingCopy}</span> : null}
-              </div>
-              <p className="forecast-status-copy">
-                {error}
-              </p>
-            </div>
-          ) : response ? (
-            <div className="forecast-status-card">
-              <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-success">RESULTS</p>
-                {processingCopy ? <span className="forecast-status-timing">{processingCopy}</span> : null}
-              </div>
-              <ul className="forecast-status-list forecast-status-list-compact">
-                {resultSummaries.map((summary) => (
-                  <li key={summary.label}>
-                    <strong>{summary.label}</strong>
-                    <span>{summary.mae}</span>
-                    <span>{summary.mape}</span>
-                    <span>{summary.validationPeriod}</span>
-                    {summary.fallbackNote ? <span>{summary.fallbackNote}</span> : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
           ) : (
-            <div className="forecast-status-card">
+            <div className={error ? "forecast-status-card forecast-status-error" : "forecast-status-card"}>
               <div className="forecast-status-topline">
-                <p className="forecast-status-title forecast-status-title-neutral">RESULTS</p>
+                <p
+                  className={
+                    response
+                      ? "forecast-status-title forecast-status-title-success"
+                      : error
+                      ? "forecast-status-title forecast-status-title-error"
+                      : "forecast-status-title forecast-status-title-neutral"
+                  }
+                >
+                  RESULTS
+                </p>
               </div>
-              <p className="forecast-status-copy">
-                Press RUN to display validation metrics, total processing time, and the forecast overlay on the upper charts.
-              </p>
-              <p className="forecast-status-copy forecast-status-copy-secondary">
-                {role === "dataAnalyst"
-                  ? `For ${value.modelType}, you can open advanced settings and save ${hyperparametersByModel[value.modelType].length} hyperparameters.`
-                  : "The Portfolio Manager profile focuses on the essential ARIMA and Prophet models."}
-              </p>
+              <div className="forecast-status-summary">
+                <p>
+                  <span>Status:</span>
+                  <strong>{executionStatus}</strong>
+                </p>
+                <p>
+                  <span>Durata:</span>
+                  <strong>{processingCopy ?? "--"}</strong>
+                </p>
+                <div className="forecast-status-models-row">
+                  <span>Modelli:</span>
+                  {modelRecapRows.length > 0 ? (
+                    <ul className="forecast-status-models-list">
+                      {modelRecapRows.map((row) => (
+                        <li key={row}>{row}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <strong>--</strong>
+                  )}
+                </div>
+              </div>
+              {resultSummaries.length > 0 ? (
+                <button
+                  type="button"
+                  className="ghost-button forecast-more-details-button"
+                  onClick={() => setIsDetailsOpen(true)}
+                >
+                  MORE DETAILS
+                </button>
+              ) : null}
             </div>
           )}
         </div>
@@ -352,6 +473,12 @@ export function ForecastEnginePanel({
           onClose={() => setIsAdvancedOpen(false)}
           onSave={handleSaveAdvanced}
           onSaveAndRun={handleSaveAndRunAdvanced}
+        />
+      ) : null}
+      {isDetailsOpen && resultSummaries.length > 0 ? (
+        <ForecastResultDetailsModal
+          summaries={resultSummaries}
+          onClose={() => setIsDetailsOpen(false)}
         />
       ) : null}
     </>

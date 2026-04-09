@@ -42,7 +42,9 @@ export function useForecastExecution(granularity: Granularity) {
   const runsBySignal = useMemo(() => {
     const bySignal: Partial<Record<ForecastRunDetailResponse["signal_type"], ForecastRunDetailResponse>> = {};
     for (const run of response?.runs ?? []) {
-      bySignal[run.signal_type] = run;
+      if (!bySignal[run.signal_type]) {
+        bySignal[run.signal_type] = run;
+      }
     }
     return bySignal;
   }, [response]);
@@ -61,6 +63,7 @@ export function useForecastExecution(granularity: Granularity) {
     advancedSettings?: ForecastAdvancedSettings;
     productionScope?: ForecastProductionScope;
     productionTargetCode?: string | null;
+    includeProductionBreakdowns?: boolean;
   }) {
     const startedAt = performance.now();
     setIsSubmitting(true);
@@ -71,6 +74,8 @@ export function useForecastExecution(granularity: Granularity) {
       options?.advancedSettings ?? advancedSettingsByModel[formState.modelType];
     const productionScope = options?.productionScope ?? "portfolio";
     const productionTargetCode = options?.productionTargetCode ?? null;
+    const includeProductionBreakdowns =
+      options?.includeProductionBreakdowns ?? false;
 
     try {
       void trackUserAction({
@@ -85,6 +90,7 @@ export function useForecastExecution(granularity: Granularity) {
           advanced_settings_keys: Object.keys(activeAdvancedSettings ?? {}),
           production_scope: productionScope,
           production_target_code: productionTargetCode,
+          include_production_breakdowns: includeProductionBreakdowns,
         },
       });
       const nextResponse = await energyApi.runForecast({
@@ -96,6 +102,7 @@ export function useForecastExecution(granularity: Granularity) {
         advanced_settings: activeAdvancedSettings,
         production_scope: productionScope,
         production_target_code: productionTargetCode,
+        include_production_breakdowns: includeProductionBreakdowns,
       });
       setResponse(nextResponse);
       void trackUserAction({
@@ -109,6 +116,7 @@ export function useForecastExecution(granularity: Granularity) {
           run_ids: nextResponse.runs.map((run) => run.id),
           production_scope: productionScope,
           production_target_code: productionTargetCode,
+          include_production_breakdowns: includeProductionBreakdowns,
         },
       });
     } catch (reason) {
@@ -129,6 +137,7 @@ export function useForecastExecution(granularity: Granularity) {
           horizon: formState.horizon,
           production_scope: productionScope,
           production_target_code: productionTargetCode,
+          include_production_breakdowns: includeProductionBreakdowns,
         },
         payload: {
           error:

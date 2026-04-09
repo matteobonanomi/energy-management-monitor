@@ -1,6 +1,7 @@
 import type {
   ComparisonPoint,
   ForecastPoint,
+  ForecastRunDetailResponse,
   NamedSeries,
   TimeSeriesPoint,
 } from "../types/api";
@@ -133,12 +134,28 @@ export function buildMonitorForecastChartData(
 }
 
 /**
- * Preserves stacked production breakdowns while reserving a dedicated channel
- * for total forecast output on top of the composition view.
+ * Names production forecast overlays deterministically so stacked charts can
+ * align total and technology forecasts with a stable legend vocabulary.
+ */
+export function buildProductionForecastSeriesKey(
+  scope: string,
+  targetCode: string | null,
+): string {
+  if (scope === "technology" && targetCode) {
+    return `forecast_${targetCode}`;
+  }
+  return "forecast_total";
+}
+
+/**
+ * Preserves stacked production breakdowns while overlaying portfolio-total and
+ * technology-specific forecasts on the same timestamp axis.
  */
 export function buildStackedMonitorChartData(
   actualSeries: NamedSeries[],
-  forecastPoints: ForecastPoint[],
+  forecastRuns: Array<
+    Pick<ForecastRunDetailResponse, "scope" | "target_code" | "values">
+  >,
 ): ChartDatum[] {
   const rows = new Map<string, ChartDatum>();
 
@@ -147,21 +164,27 @@ export function buildStackedMonitorChartData(
       const existing = rows.get(point.timestamp) ?? {
         timestamp: point.timestamp,
         label: formatChartLabel(point.timestamp),
-        forecast: null,
+        forecast_total: null,
       };
       existing[series.key] = point.value;
       rows.set(point.timestamp, existing);
     }
   }
 
-  for (const point of forecastPoints) {
-    const existing = rows.get(point.timestamp) ?? {
-      timestamp: point.timestamp,
-      label: formatChartLabel(point.timestamp),
-      forecast: null,
-    };
-    existing.forecast = point.value;
-    rows.set(point.timestamp, existing);
+  for (const run of forecastRuns) {
+    const forecastKey = buildProductionForecastSeriesKey(
+      run.scope,
+      run.target_code,
+    );
+    for (const point of run.values) {
+      const existing = rows.get(point.timestamp) ?? {
+        timestamp: point.timestamp,
+        label: formatChartLabel(point.timestamp),
+        forecast_total: null,
+      };
+      existing[forecastKey] = point.value;
+      rows.set(point.timestamp, existing);
+    }
   }
 
   return [...rows.values()].sort(sortByTimestamp);
@@ -174,7 +197,9 @@ export function buildStackedMonitorChartData(
 export function buildDualAxisChartData(
   productionSeries: NamedSeries[],
   priceActualPoints: TimeSeriesPoint[],
-  productionForecastPoints: ForecastPoint[],
+  productionForecastRuns: Array<
+    Pick<ForecastRunDetailResponse, "scope" | "target_code" | "values">
+  >,
   priceForecastPoints: ForecastPoint[],
 ): ChartDatum[] {
   const rows = new Map<string, ChartDatum>();
@@ -184,7 +209,7 @@ export function buildDualAxisChartData(
       const existing = rows.get(point.timestamp) ?? {
         timestamp: point.timestamp,
         label: formatChartLabel(point.timestamp),
-        productionForecast: null,
+        forecast_total: null,
         priceActual: null,
         priceForecast: null,
       };
@@ -197,7 +222,7 @@ export function buildDualAxisChartData(
     const existing = rows.get(point.timestamp) ?? {
       timestamp: point.timestamp,
       label: formatChartLabel(point.timestamp),
-      productionForecast: null,
+      forecast_total: null,
       priceActual: null,
       priceForecast: null,
     };
@@ -205,23 +230,26 @@ export function buildDualAxisChartData(
     rows.set(point.timestamp, existing);
   }
 
-  for (const point of productionForecastPoints) {
-    const existing = rows.get(point.timestamp) ?? {
-      timestamp: point.timestamp,
-      label: formatChartLabel(point.timestamp),
-      productionForecast: null,
-      priceActual: null,
-      priceForecast: null,
-    };
-    existing.productionForecast = point.value;
-    rows.set(point.timestamp, existing);
+  for (const run of productionForecastRuns) {
+    const forecastKey = buildProductionForecastSeriesKey(run.scope, run.target_code);
+    for (const point of run.values) {
+      const existing = rows.get(point.timestamp) ?? {
+        timestamp: point.timestamp,
+        label: formatChartLabel(point.timestamp),
+        forecast_total: null,
+        priceActual: null,
+        priceForecast: null,
+      };
+      existing[forecastKey] = point.value;
+      rows.set(point.timestamp, existing);
+    }
   }
 
   for (const point of priceForecastPoints) {
     const existing = rows.get(point.timestamp) ?? {
       timestamp: point.timestamp,
       label: formatChartLabel(point.timestamp),
-      productionForecast: null,
+      forecast_total: null,
       priceActual: null,
       priceForecast: null,
     };
